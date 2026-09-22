@@ -1742,7 +1742,8 @@
           <option value="Prestamo">Préstamo</option>
           <option value="CuotaPrestamo">Cuota préstamo</option>
           <option value="Descuento">Descuento</option>
-            <option value="Penalizacion">Penalización</option>
+          <option value="Penalizacion">Penalización</option>
+          <option value="Fiado">Fiado 🍔</option>
         </select>
       </div>
       <div id="edit-mov-modo-box" class="hidden">
@@ -6041,7 +6042,7 @@
       const tipoSel = document.getElementById("edit-mov-tipo");
       if (currentUser.rol !== "admin") {
         [...tipoSel.options].forEach(o => {
-          o.hidden = !(o.value === "Adelanto" || o.value === "Gasto" || o.value === "Ingreso");
+          o.hidden = !(o.value === "Adelanto" || o.value === "Gasto" || o.value === "Ingreso" || o.value === "Fiado");
         });
       } else {
         [...tipoSel.options].forEach(o => { o.hidden = false; });
@@ -6070,6 +6071,12 @@
         // si lista vacía, rellenar con todos sin marcar
         const cont = document.getElementById("edit-mov-grupo-lista");
         if (cont && !cont.children.length) renderEditGrupoLista([]);
+        // Fiado siempre es individual (igual que al crear): si venía de un tipo grupal,
+        // deja marcado solo el primero para no crear un "Fiado grupal" por accidente.
+        if (tipo === "Fiado") {
+          const checks = [...document.querySelectorAll(".edit-grupo-check:checked")];
+          checks.slice(1).forEach(c => { c.checked = false; });
+        }
       }
       actualizarEditMontoHint();
     }
@@ -6166,7 +6173,7 @@
         const name = e.empleado || "";
         const checked = selected.has(name);
         return `<label class="flex items-center gap-2 px-2 py-1.5 rounded-md border border-[var(--border)] bg-[var(--bg-elevated)] cursor-pointer text-[12px]">
-          <input type="checkbox" class="edit-grupo-check accent-[#c9a227]" value="${esc(name)}" ${checked ? "checked" : ""} onchange="actualizarEditMontoHint()" />
+          <input type="checkbox" class="edit-grupo-check accent-[#c9a227]" value="${esc(name)}" ${checked ? "checked" : ""} onchange="onEditGrupoToggle(this)" />
           <span class="truncate text-gray-200">${esc(name)}</span>
         </label>`;
       }).join("") || `<p class="text-xs text-gray-500">Sin empleados</p>`;
@@ -6175,7 +6182,22 @@
     }
 
     function seleccionarEditGrupo(todos) {
+      const tipo = document.getElementById("edit-mov-tipo")?.value;
+      if (todos && tipo === "Fiado") {
+        return showToast("Fiado es individual: selecciona solo 1 empleado", "error");
+      }
       document.querySelectorAll(".edit-grupo-check").forEach(c => { c.checked = !!todos; });
+      actualizarEditMontoHint();
+    }
+
+    /** Como en creación: Fiado no admite varios empleados a la vez (selección tipo radio). */
+    function onEditGrupoToggle(el) {
+      const tipo = document.getElementById("edit-mov-tipo")?.value;
+      if (tipo === "Fiado" && el.checked) {
+        document.querySelectorAll(".edit-grupo-check").forEach(c => {
+          if (c !== el) c.checked = false;
+        });
+      }
       actualizarEditMontoHint();
     }
 
@@ -6213,6 +6235,9 @@
       if (!fecha) return showToast("Elige una fecha", "error");
       if (!tipo) return showToast("Elige un tipo", "error");
       if (!empsSel.length) return showToast("Elige al menos un empleado", "error");
+      if (tipo === "Fiado" && empsSel.length > 1) {
+        return showToast("Fiado es individual: selecciona solo 1 empleado", "error");
+      }
       if (!montoRaw || montoRaw <= 0) return showToast("Monto inválido", "error");
       if (!notas) return showToast("La nota es obligatoria", "error");
       if (tipoRequiereMetodo(tipo) && !metodo) {
