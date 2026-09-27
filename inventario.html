@@ -110,6 +110,14 @@ td{padding:9px 8px;border-bottom:1px solid var(--border2)}
 .detail-item{background:var(--surface2);border-radius:8px;padding:10px 12px;border:1px solid var(--border2)}
 .detail-item .dl{font-size:.7rem;color:var(--text3)}
 .detail-item .dv{font-size:.95rem;font-weight:500;margin-top:2px}
+.encamino{display:block;font-size:11px;font-weight:500;color:var(--primary);opacity:.55;white-space:nowrap;margin-top:1px}
+.card .stock .encamino{font-size:10px}
+.pedido-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border2);background:var(--surface)}
+.pedido-row:last-child{border-bottom:none}
+.pedido-row .info{flex:1;min-width:0}
+.pedido-row .btn{width:auto;padding:8px 12px;font-size:12px;flex:none}
+.progress{height:4px;background:var(--border2);border-radius:2px;margin-top:6px;overflow:hidden}
+.progress>div{height:100%;background:var(--primary)}
 </style>
 </head>
 <body>
@@ -140,6 +148,7 @@ td{padding:9px 8px;border-bottom:1px solid var(--border2)}
       <div class="quick-grid" id="quick-grid"></div>
       <div class="section-title">Estado actual</div>
       <div class="stats-bar" id="stats-bar"></div>
+      <div id="home-encamino"></div>
       <div id="home-priority"></div>
     </section>
     <section id="view-zona" class="hidden">
@@ -192,9 +201,19 @@ td{padding:9px 8px;border-bottom:1px solid var(--border2)}
       <div id="reab-list"></div>
     </section>
     <section id="view-compras" class="hidden">
-      <h3 class="section-title">Historial de compras</h3>
+      <h3 class="section-title">Compras registradas (pedido vs recibido)</h3>
+      <div style="overflow-x:auto;margin-bottom:16px"><table id="tabla-pedidos"><thead><tr>
+        <th>Producto</th><th>Recibido / Pedido</th><th>Estado</th><th>Registró</th><th>Fecha</th>
+      </tr></thead><tbody></tbody></table></div>
+      <h3 class="section-title">Recepciones (entradas a stock)</h3>
       <div style="overflow-x:auto"><table id="tabla-compras"><thead><tr>
         <th>Producto</th><th>Cantidad</th><th>Usuario</th><th>Fecha</th>
+      </tr></thead><tbody></tbody></table></div>
+    </section>
+    <section id="view-ajustes" class="hidden">
+      <h3 class="section-title">Historial de ajustes de inventario</h3>
+      <div style="overflow-x:auto"><table id="tabla-ajustes"><thead><tr>
+        <th>Producto</th><th>Antes→Ahora</th><th>Dif.</th><th>Motivo</th><th>Usuario</th><th>Fecha</th>
       </tr></thead><tbody></tbody></table></div>
     </section>
     <section id="view-admin" class="hidden">
@@ -210,7 +229,8 @@ td{padding:9px 8px;border-bottom:1px solid var(--border2)}
     <button data-view="inicio" class="active"><span class="ic">⌂</span>Inicio</button>
     <button data-view="zona"><span class="ic">▤</span>Inventario</button>
     <button data-view="historial"><span class="ic">↺</span>Salidas</button>
-    <button data-view="compras"><span class="ic">↓</span>Historial</button>
+    <button data-view="compras"><span class="ic">↓</span>Compras</button>
+    <button data-view="ajustes"><span class="ic">±</span>Ajustes</button>
     <button data-view="reabastecer" id="nav-reab" class="hidden"><span class="ic">$</span>Comprar</button>
     <button data-view="admin" id="nav-admin" class="hidden"><span class="ic">⚙</span>Admin</button>
   </nav>
@@ -230,6 +250,8 @@ const CATEGORIAS_BASE=['Sin Categoria','Cocina','Bebidas'];
 const TIPOS_COMPRA=['Persona','Pedido'];
 
 let profile=null, allProductos=[], currentZona='Bodega', searchQuery='', statusFilter='all';
+// Compras registradas que aún no llegan completas (estado pendiente/parcial). No son stock.
+let pedidosAbiertos=[];
 
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2400)}
 function fmtFecha(iso){try{return new Date(iso).toLocaleString('es-MX',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}catch(e){return iso||'—'}}
@@ -248,6 +270,11 @@ function getCategorias(){return[...new Set([...CATEGORIAS_BASE,...allProductos.m
 function optionsHtml(list,selected,includeEmpty){let h=includeEmpty?'<option value="">—</option>':'';list.forEach(v=>{h+=`<option value="${esc(v)}" ${selected===v?'selected':''}>${esc(v)}</option>`});return h}
 
 function calcEstado(p){const s=Number(p.stock_actual)||0,min=Number(p.minimo)||0,max=Number(p.maximo)||0,com=Number(p.comprar)!=null&&!isNaN(Number(p.comprar))?Number(p.comprar):(min+((max>min)?(max-min)*0.4:0));if(s===0)return'Agotado';if(s<=min)return'Urgente Comprar';if(max>0&&s>=max)return'Al Máximo';if(p.compra_lenta)return'En Stock';if(s<=com)return'Necesario Comprar';return'En Stock'}
+function round2(n){return Math.round((Number(n)||0)*100)/100}
+function faltaDe(pd){return round2((Number(pd.cantidad_pedida)||0)-(Number(pd.cantidad_recibida)||0))}
+function enCaminoDe(p){return round2(pedidosAbiertos.filter(x=>x.producto_id===p.id).reduce((a,x)=>a+faltaDe(x),0))}
+// Solo se pinta si hay algo pendiente; si no, no aparece nada.
+function encaminoHTML(p){const n=enCaminoDe(p);return n>0?`<span class="encamino">+${n} en camino</span>`:''}
 function stockClass(p){const s=Number(p.stock_actual)||0;if(s<=0)return'zero';if(s<=(Number(p.minimo)||0))return'low';return''}
 
 document.getElementById('login-btn').onclick=async()=>{
@@ -276,7 +303,7 @@ async function bootApp(){
   document.getElementById('fab-add').classList.toggle('show',esJefe());
   await loadProductos();
   const br=document.getElementById('btn-refresh');
-  if(br && !br.dataset.bound){br.dataset.bound='1';br.onclick=async()=>{br.disabled=true;br.textContent='…';try{await loadProductos();renderHome();renderZonaTabs();const v=document.querySelector('nav.bottomnav button.active');if(v){const view=v.dataset.view;if(view==='historial')await loadHistorial();if(view==='compras')await loadCompras();if(view==='reabastecer')renderReabastecer();if(view==='admin')await loadAdmin();}toast('Datos actualizados');}catch(e){toast('Error al actualizar');console.error(e);}br.disabled=false;br.textContent='↻ Actualizar';};}
+  if(br && !br.dataset.bound){br.dataset.bound='1';br.onclick=async()=>{br.disabled=true;br.textContent='…';try{await loadProductos();renderHome();renderZonaTabs();const v=document.querySelector('nav.bottomnav button.active');if(v){const view=v.dataset.view;if(view==='historial')await loadHistorial();if(view==='compras')await loadCompras();if(view==='ajustes')await loadAjustes();if(view==='reabastecer')renderReabastecer();if(view==='admin')await loadAdmin();}toast('Datos actualizados');}catch(e){toast('Error al actualizar');console.error(e);}br.disabled=false;br.textContent='↻ Actualizar';};}
   renderHome();
   renderZonaTabs();
   switchView('inicio');
@@ -286,11 +313,12 @@ async function bootApp(){
 document.querySelectorAll('nav.bottomnav button').forEach(btn=>{btn.onclick=()=>switchView(btn.dataset.view)});
 function switchView(view){
   document.querySelectorAll('nav.bottomnav button').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  ['inicio','zona','historial','compras','reabastecer','admin'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==view));
-  const titles={inicio:'Inicio',zona:'Inventario',historial:'Salidas',compras:'Historial compras',reabastecer:'Lista de compra',admin:'Admin'};
+  ['inicio','zona','historial','compras','ajustes','reabastecer','admin'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==view));
+  const titles={inicio:'Inicio',zona:'Inventario',historial:'Salidas',compras:'Compras',ajustes:'Ajustes',reabastecer:'Lista de compra',admin:'Admin'};
   document.getElementById('header-title').textContent=titles[view]||'Inventario';
   if(view==='historial')loadHistorial();
   if(view==='compras')loadCompras();
+  if(view==='ajustes')loadAjustes();
   if(view==='reabastecer'){
     window._reabTienda=window._reabTienda||'all';
     const tCont=document.getElementById('reab-tiendas');
@@ -323,6 +351,12 @@ async function loadProductos(){
   const{data,error}=await sb.from('productos').select('*').order('nombre');
   if(error){toast('Error cargando productos');console.error(error);return}
   allProductos=(data||[]).map(p=>({...p,estado:calcEstado(p)}));
+  await loadPedidosAbiertos();
+}
+async function loadPedidosAbiertos(){
+  const{data,error}=await sb.from('pedidos').select('*').in('estado',['pendiente','parcial']).order('creado_en');
+  if(error){console.warn('pedidos no disponible (¿se ejecutó supabase/pedidos_ajustes.sql?)',error);pedidosAbiertos=[];return}
+  pedidosAbiertos=data||[];
 }
 
 async function renderHome(){
@@ -330,6 +364,8 @@ async function renderHome(){
   const counts={};allProductos.forEach(p=>{counts[p.estado]=(counts[p.estado]||0)+1});
   document.getElementById('stats-bar').innerHTML=ESTADO_ORDEN.filter(k=>counts[k]).map(k=>
     `<div class="stat-pill ${ESTADO_CLASS[k]}">${k} · ${counts[k]}</div>`).join('');
+
+  renderEnCamino();
 
   // Priority lists
   let html='';
@@ -361,7 +397,7 @@ async function renderHome(){
     <div class="quick-card" data-id="${p.id}">
       <div class="qn">${esc(p.nombre)}</div>
       <div class="qz">${esc(p.zona)} · ${esc(p.unidad||'')}</div>
-      <div class="qs ${stockClass(p)}">${p.stock_actual??0}</div>
+      <div class="qs ${stockClass(p)}">${p.stock_actual??0}${encaminoHTML(p)}</div>
     </div>`).join('');
   grid.querySelectorAll('.quick-card').forEach(c=>c.onclick=()=>{
     const p=allProductos.find(x=>x.id===c.dataset.id);if(p)openProductModal(p);
@@ -378,7 +414,32 @@ function cardHTML(p){
   return`<div class="card" data-id="${p.id}">
     <div class="info"><div class="nombre">${esc(p.nombre)}</div>
     <div class="sub">${p.subzona?esc(p.subzona)+' · ':''}${esc(p.unidad||'')} ${lenta}${extra}</div></div>
-    <div class="stock ${stockClass(p)}">${p.stock_actual??0}<small>stock</small></div></div>`;
+    <div class="stock ${stockClass(p)}">${p.stock_actual??0}<small>stock</small>${encaminoHTML(p)}</div></div>`;
+}
+
+// Lista de compras pendientes de llegar (visible para todos). Solo aparece si hay alguna.
+function pedidoRowHTML(pd){
+  const p=allProductos.find(x=>x.id===pd.producto_id);
+  const pedida=Number(pd.cantidad_pedida)||0, rec=Number(pd.cantidad_recibida)||0;
+  const pct=pedida>0?Math.min(100,rec/pedida*100):0;
+  return`<div class="pedido-row">
+    <div class="info"><div class="nombre" style="font-size:.9rem;font-weight:500">${esc(p?p.nombre:'Producto eliminado')}</div>
+      <div class="sub" style="font-size:12px;color:var(--text2)">Llegó ${round2(rec)} de ${round2(pedida)} ${esc(p&&p.unidad||'')} · faltan <b>${faltaDe(pd)}</b>${pd.tipo_compra?' · '+esc(pd.tipo_compra):''}</div>
+      <div class="progress"><div style="width:${pct}%"></div></div></div>
+    <button class="btn" data-recibir="${pd.id}">Recibir</button>
+  </div>`;
+}
+function bindPedidoRows(cont,onDone){
+  cont.querySelectorAll('[data-recibir]').forEach(b=>b.onclick=()=>{
+    const pd=pedidosAbiertos.find(x=>x.id===b.dataset.recibir);if(pd)openRecibirModal(pd,onDone);
+  });
+}
+function renderEnCamino(){
+  const cont=document.getElementById('home-encamino');
+  if(!pedidosAbiertos.length){cont.innerHTML='';return}
+  cont.innerHTML=`<div class="estado-group"><div class="estado-head st-stock"><span class="dot" style="background:var(--primary)"></span>En camino (por recibir)<span class="count-badge">${pedidosAbiertos.length}</span></div>
+    <div class="card-list">${pedidosAbiertos.map(pedidoRowHTML).join('')}</div></div>`;
+  bindPedidoRows(cont);
 }
 
 function renderZonaTabs(){
@@ -422,23 +483,29 @@ function openProductModal(p){
       <div class="detail-item"><div class="dl">Precio</div><div class="dv">$${Number(p.precio_unitario||0).toFixed(2)}</div></div>
     </div>`;
   }
+  const pendientes=pedidosAbiertos.filter(x=>x.producto_id===p.id);
+  const pendHtml=pendientes.length?`<div class="section-title" style="margin-top:4px">En camino</div>
+    <div class="card-list" style="border-radius:8px;border:1px solid var(--border2);margin-bottom:12px">${pendientes.map(pd=>pedidoRowHTML(pd).replace('</button>',`</button>${jefe?`<button class="btn btn-outline" data-cancelar="${pd.id}" style="width:auto;padding:8px 10px;font-size:12px;flex:none">Cancelar</button>`:''}`)).join('')}</div>`:'';
+  const enc=enCaminoDe(p);
   bg.innerHTML=`<div class="modal"><div class="modal-handle"></div>
     <h3>${esc(p.nombre)}</h3>
-    <div class="m-sub">${esc(p.zona)}${p.subzona?' · '+esc(p.subzona):''} · Stock: <b>${p.stock_actual??0} ${esc(p.unidad||'')}</b><br>
+    <div class="m-sub">${esc(p.zona)}${p.subzona?' · '+esc(p.subzona):''} · Stock: <b>${p.stock_actual??0} ${esc(p.unidad||'')}</b>${enc>0?` <span style="color:var(--primary);opacity:.55">+${enc} en camino</span>`:''}<br>
     <span style="font-size:.8rem">${esc(p.estado)}</span></div>
     ${details}
+    ${pendHtml}
     <div class="field"><label>Acción</label>
       <select id="m-accion">
         <option value="salida">Salida / uso (−)</option>
         <option value="merma">Merma / desperdicio (−)</option>
-        ${jefe?'<option value="compra">Registrar compra (+)</option>':''}
-        ${jefe?'<option value="ajuste">Ajustar stock / nivel</option>':''}
+        <option value="ajuste">Ajustar inventario (conteo real)</option>
+        ${jefe?'<option value="compra">Registrar compra (queda pendiente)</option>':''}
       </select></div>
     <div id="m-normal-qty" class="qty-row" style="${esBidon(p)?'display:none':''}">
       <button type="button" class="qty-btn" id="m-minus">−</button>
       <div class="qty-val" id="m-qty">1</div>
       <button type="button" class="qty-btn" id="m-plus">+</button>
     </div>
+    <div id="m-hint" style="font-size:.75rem;color:var(--text3);text-align:center;margin:-6px 0 10px;display:none"></div>
     <div id="m-bidon-ui" style="${esBidon(p)?'':'display:none'};padding:8px 0 4px">
       <div style="font-size:.8rem;color:var(--text2);margin-bottom:6px">Nivel del bidón (desliza)</div>
       <input type="range" id="m-slider" min="0" max="100" step="5" value="${Math.round(Math.min(100,Math.max(0,((Number(p.stock_actual)||0)/(Number(p.capacidad)||Number(p.maximo)||1))*100)))}" style="width:100%;accent-color:var(--primary)">
@@ -447,8 +514,10 @@ function openProductModal(p){
         <span id="m-slider-val" style="font-weight:600;color:var(--primary)">—</span>
         <span>100%</span>
       </div>
-      <div style="font-size:.75rem;color:var(--text3);margin-top:6px">Al comprar se llena al 100%. Al guardar salida/merma/ajuste se pone el nivel que marques.</div>
+      <div style="font-size:.75rem;color:var(--text3);margin-top:6px">Salida/merma solo baja el nivel. Para subirlo sin compra usa "Ajustar inventario".</div>
     </div>
+    <div class="field" id="m-motivo-wrap" style="display:none"><label>Motivo del ajuste *</label>
+      <input id="m-motivo" placeholder="Ej: conteo físico, estaba mal capturado"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="m-cerrar">Cancelar</button>
       <button class="btn" id="m-guardar">Guardar</button>
@@ -457,7 +526,13 @@ function openProductModal(p){
       <button class="btn btn-outline" id="m-edit">Editar producto</button></div>`:''}
   </div>`;
   document.body.appendChild(bg);
+  bindPedidoRows(bg,()=>bg.remove());
+  bg.querySelectorAll('[data-cancelar]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('¿Cancelar lo que falta de esta compra? Lo ya recibido se queda en stock.'))return;
+    if(await cancelarPedido(b.dataset.cancelar))bg.remove();
+  });
   const qEl=()=>document.getElementById('m-qty');
+  const setQty=v=>{qty=round2(v);qEl().textContent=qty};
   const cap=Number(p.capacidad)||Number(p.maximo)||1;
   const bidon=esBidon(p);
   function syncSliderLabel(){
@@ -474,19 +549,32 @@ function openProductModal(p){
   }
   const minus=document.getElementById('m-minus');
   const plus=document.getElementById('m-plus');
-  if(minus)minus.onclick=()=>{qty=Math.max(0,qty-1);qEl().textContent=qty};
-  if(plus)plus.onclick=()=>{qty++;qEl().textContent=qty};
+  if(minus)minus.onclick=()=>setQty(Math.max(0,qty-1));
+  if(plus)plus.onclick=()=>setQty(qty+1);
+  function sugeridoCompra(){
+    if(bidon){const f=round2(cap-(Number(p.stock_actual)||0)-enCaminoDe(p));return f>0?f:1}
+    return qtySugerida(p)||1;
+  }
   document.getElementById('m-accion').onchange=e=>{
     const act=e.target.value;
     const norm=document.getElementById('m-normal-qty');
     const bui=document.getElementById('m-bidon-ui');
+    const hint=document.getElementById('m-hint');
+    document.getElementById('m-motivo-wrap').style.display=act==='ajuste'?'block':'none';
+    hint.style.display='none';
+    if(act==='compra'){
+      hint.textContent='No suma al stock: queda "en camino" hasta que se marque como recibido.';hint.style.display='block';
+    } else if(act==='ajuste'){
+      hint.textContent=bidon?'':'Pon la cantidad que hay físicamente.';hint.style.display=bidon?'none':'block';
+    }
     if(bidon){
-      // bidón: compra = llenar; salida/merma/ajuste = slider
-      if(act==='compra'){if(bui)bui.style.display='none';if(norm){norm.style.display='flex';qty=1;qEl().textContent=1}}
+      // bidón: compra = cantidad a pedir; salida/merma/ajuste = slider
+      if(act==='compra'){if(bui)bui.style.display='none';if(norm){norm.style.display='flex';setQty(sugeridoCompra())}}
       else{if(bui)bui.style.display='block';if(norm)norm.style.display='none'}
     } else {
-      if(act==='ajuste'){qty=p.stock_actual||0;qEl().textContent=qty}
-      else{qty=1;qEl().textContent=1}
+      if(act==='ajuste')setQty(p.stock_actual||0);
+      else if(act==='compra')setQty(sugeridoCompra());
+      else setQty(1);
     }
   };
   // init visibility for bidon
@@ -497,30 +585,36 @@ function openProductModal(p){
   document.getElementById('m-cerrar').onclick=()=>bg.remove();
   document.getElementById('m-guardar').onclick=async()=>{
     const act=document.getElementById('m-accion').value;
-    if(bidon && act!=='compra'){
+    const motivo=(document.getElementById('m-motivo').value||'').trim();
+    if(act==='ajuste'&&!motivo){toast('Escribe el motivo del ajuste');return}
+    if(act==='compra'){
+      if(!esJefe()){toast('Solo jefes registran compras');return}
+      if(qty<=0){toast('Cantidad inválida');return}
+      if(await registrarPedido(p,qty))bg.remove();
+      return;
+    }
+    if(bidon){
       const sl=document.getElementById('m-slider');
       const pct=Number(sl&&sl.value||0);
       const nuevo=Math.round((pct/100)*cap*100)/100;
       const prev=Number(p.stock_actual)||0;
       const delta=Math.round((nuevo-prev)*100)/100;
       if(delta===0){toast('Sin cambios');bg.remove();return}
-      if(delta<0) await registrarSalida(p,delta, act==='merma'?'merma':(act==='ajuste'?'ajuste':'salida'));
-      else await registrarCompra(p,delta);
-      bg.remove();return;
-    }
-    if(bidon && act==='compra'){
-      // llenar completamente
-      const prev=Number(p.stock_actual)||0;
-      const delta=Math.round((cap-prev)*100)/100;
-      if(delta<=0){toast('Ya está lleno');bg.remove();return}
-      await registrarCompra(p,delta);
+      if(act==='ajuste'){if(await registrarAjuste(p,nuevo,motivo))bg.remove();return}
+      if(delta>0){toast('Salida/merma no puede subir el nivel. Usa "Ajustar inventario".');return}
+      await registrarSalida(p,delta,act==='merma'?'merma':'salida');
       bg.remove();return;
     }
     // normal (no bidón)
-    if(act==='salida'){if(qty<=0){toast('Cantidad inválida');return}if(qty>(p.stock_actual||0)){toast('Stock insuficiente');return}await registrarSalida(p,-qty,'salida')}
-    else if(act==='merma'){if(qty<=0){toast('Cantidad inválida');return}if(qty>(p.stock_actual||0)){toast('Stock insuficiente');return}await registrarSalida(p,-qty,'merma')}
-    else if(act==='compra'){if(!esJefe()){toast('Solo jefes registran compras');return}if(qty<=0){toast('Cantidad inválida');return}await registrarCompra(p,qty)}
-    else if(act==='ajuste'){if(!esJefe()){toast('Solo jefes');return}const prev=p.stock_actual||0;const delta=qty-prev;if(delta===0){toast('Sin cambios');bg.remove();return}if(delta<0)await registrarSalida(p,delta,'ajuste');else await registrarCompra(p,delta)}
+    if(act==='salida'||act==='merma'){
+      if(qty<=0){toast('Cantidad inválida');return}
+      if(qty>(p.stock_actual||0)){toast('Stock insuficiente');return}
+      await registrarSalida(p,-qty,act);
+    }
+    else if(act==='ajuste'){
+      if(qty===(Number(p.stock_actual)||0)){toast('Sin cambios');bg.remove();return}
+      if(!await registrarAjuste(p,qty,motivo))return;
+    }
     bg.remove();
   };
   if(jefe)document.getElementById('m-edit').onclick=()=>{bg.remove();openEditProduct(p)};
@@ -667,12 +761,73 @@ async function registrarSalida(p,cantidad,tipo){
   toast(`${label}: ${p.nombre} (${cant})`);
   await loadProductos();renderHome();renderZonaTabs();
 }
-async function registrarCompra(p,cantidad){
-  const{data:{user}}=await sb.auth.getUser();
-  const{error}=await sb.from('compras').insert({producto_id:p.id,cantidad_comprada:cantidad,usuario:user.email});
-  if(error){toast('Error compra: '+(error.message||''));console.error(error);return}
-  toast(`Compra: ${p.nombre} (+${cantidad})`);
-  await loadProductos();renderHome();renderZonaTabs();
+async function refrescarTodo(){await loadProductos();renderHome();renderZonaTabs()}
+// Registrar una compra NO suma stock: crea un pedido pendiente (persona o pedido). Solo jefes.
+async function registrarPedido(p,cantidad){
+  if(!esJefe()){toast('Solo jefes registran compras');return false}
+  const{error}=await sb.rpc('registrar_pedido',{p_producto:p.id,p_cantidad:cantidad,p_tipo:p.tipo_compra||null});
+  if(error){toast('Error compra: '+(error.message||''));console.error(error);return false}
+  toast(`Compra registrada: ${p.nombre} (+${cantidad} en camino)`);
+  await refrescarTodo();
+  return true;
+}
+// Único camino por el que una compra sube stock: lo que realmente llegó.
+async function recibirPedido(pd,cantidad){
+  const{error}=await sb.rpc('recibir_pedido',{p_pedido:pd.id,p_cantidad:cantidad});
+  if(error){toast('Error: '+(error.message||''));console.error(error);return false}
+  const falta=round2(faltaDe(pd)-cantidad);
+  toast(falta>0?`Recibido ${cantidad} · faltan ${falta}`:`Recibido ${cantidad} · compra completa`);
+  await refrescarTodo();
+  return true;
+}
+async function cancelarPedido(id){
+  if(!esJefe()){toast('Solo jefes');return false}
+  const{error}=await sb.rpc('cancelar_pedido',{p_pedido:id});
+  if(error){toast('Error: '+(error.message||''));console.error(error);return false}
+  toast('Pendiente cancelado');
+  await refrescarTodo();
+  return true;
+}
+// Ajuste = conteo real. Cualquiera puede. Va a su propio historial, no a salidas ni compras.
+async function registrarAjuste(p,stockNuevo,motivo){
+  const{error}=await sb.rpc('registrar_ajuste',{p_producto:p.id,p_stock_nuevo:stockNuevo,p_motivo:motivo});
+  if(error){toast('Error ajuste: '+(error.message||''));console.error(error);return false}
+  const dif=round2(stockNuevo-(Number(p.stock_actual)||0));
+  toast(`Ajuste: ${p.nombre} (${dif>0?'+':''}${dif})`);
+  await refrescarTodo();
+  return true;
+}
+function openRecibirModal(pd,onDone){
+  const p=allProductos.find(x=>x.id===pd.producto_id);
+  const falta=faltaDe(pd);
+  let qty=falta;
+  const bg=document.createElement('div');bg.className='modal-bg';
+  bg.onclick=e=>{if(e.target===bg)bg.remove()};
+  bg.innerHTML=`<div class="modal"><div class="modal-handle"></div>
+    <h3>Recibir: ${esc(p?p.nombre:'Producto')}</h3>
+    <div class="m-sub">Se pidieron <b>${round2(pd.cantidad_pedida)}</b> · ya llegaron <b>${round2(pd.cantidad_recibida)}</b> · faltan <b>${falta}</b><br>
+    <span style="font-size:.8rem">¿Cuánto llegó ahora?</span></div>
+    <div class="qty-row">
+      <button type="button" class="qty-btn" id="r-minus">−</button>
+      <div class="qty-val" id="r-qty">${qty}</div>
+      <button type="button" class="qty-btn" id="r-plus">+</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="r-cerrar">Cancelar</button>
+      <button class="btn" id="r-guardar">Marcar recibido</button>
+    </div></div>`;
+  document.body.appendChild(bg);
+  const set=v=>{qty=round2(Math.min(falta,Math.max(0,v)));document.getElementById('r-qty').textContent=qty};
+  document.getElementById('r-minus').onclick=()=>set(qty-1);
+  document.getElementById('r-plus').onclick=()=>set(qty+1);
+  document.getElementById('r-cerrar').onclick=()=>bg.remove();
+  const g=document.getElementById('r-guardar');
+  g.onclick=async()=>{
+    if(qty<=0){toast('Cantidad inválida');return}
+    g.disabled=true;
+    if(await recibirPedido(pd,qty)){bg.remove();if(onDone)onDone();if(document.getElementById('view-compras').offsetParent)loadCompras();}
+    else g.disabled=false;
+  };
 }
 
 function parseTiendas(str){
@@ -684,12 +839,15 @@ function getAllTiendas(){
   allProductos.forEach(p=>parseTiendas(p.tiendas).forEach(t=>set.add(t)));
   return [...set].sort((a,b)=>a.localeCompare(b,'es'));
 }
+// Cuánto falta comprar: hasta el máximo, descontando lo que ya viene en camino.
+// Ej: max 5, stock 0, 2 en camino → sugiere 3 (no 5).
 function qtySugerida(p){
   const stock=Number(p.stock_actual)||0;
   const max=Number(p.maximo)||0;
-  if(max>stock) return Math.round((max-stock)*100)/100;
-  // si no hay max, al menos 1 si está faltante
-  if(p.estado==='Agotado'||p.estado==='Urgente Comprar'||p.estado==='Necesario Comprar') return 1;
+  const enc=enCaminoDe(p);
+  if(max>0) return Math.max(0,round2(max-stock-enc));
+  // si no hay max, al menos 1 si está faltante y no hay nada en camino
+  if(enc<=0&&(p.estado==='Agotado'||p.estado==='Urgente Comprar'||p.estado==='Necesario Comprar')) return 1;
   return 0;
 }
 function renderReabastecer(){
@@ -780,14 +938,15 @@ function renderReabastecer(){
     const precio=Number(p.precio_unitario)||0;
     const costo=qty*precio;
     const tiendasStr=parseTiendas(p.tiendas).join(', ')||'—';
+    const enc=enCaminoDe(p);
     return `<div class="card" style="cursor:default;flex-wrap:wrap;align-items:flex-start" data-pid="${p.id}">
       <div class="info" style="flex:1;min-width:140px">
         <div class="nombre">${esc(p.nombre)}</div>
-        <div class="sub">${esc(p.zona)} · Stock <b>${stock}</b>${max?` → max ${max}`:''}
+        <div class="sub">${esc(p.zona)} · Stock <b>${stock}</b>${enc>0?` <span style="color:var(--primary);opacity:.55">+${enc} en camino</span>`:''}${max?` → max ${max}`:''}
           · <span style="color:${ESTADO_COLOR[p.estado]||'inherit'}">${esc(p.estado)}</span>
         </div>
         <div class="sub">$${precio.toFixed(2)} c/u · Tiendas: ${esc(tiendasStr)}</div>
-        <div class="sub">Sugerido +${sug} · Subtotal $${costo.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+        <div class="sub">${sug>0?`Sugerido +${sug}`:(enc>0?'Cubierto por lo que viene en camino':'Sugerido +0')} · Subtotal $${costo.toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;margin-top:6px;width:100%;justify-content:space-between">
         <div style="display:flex;align-items:center;gap:10px">
@@ -817,8 +976,8 @@ function renderReabastecer(){
       const prod=allProductos.find(x=>x.id===id);
       if(!prod||qty<=0)return;
       btn.disabled=true;btn.textContent='…';
-      await registrarCompra(prod,qty);
-      window._reabQty[id]=0;
+      const ok=await registrarPedido(prod,qty);
+      if(ok) window._reabQty[id]=0;
       renderReabastecer();
     };
   });
@@ -835,7 +994,33 @@ async function loadHistorial(){
     <td>${r.stock_anterior??'—'} → ${r.stock_nuevo??'—'}</td>
     <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin movimientos</td></tr>';
 }
+const PEDIDO_ESTADO={pendiente:'Pendiente',parcial:'Parcial',completo:'Completo',cancelado:'Cancelado'};
+async function loadPedidosHist(){
+  const tbody=document.querySelector('#tabla-pedidos tbody');
+  tbody.innerHTML='<tr><td colspan="5" class="empty">Cargando…</td></tr>';
+  const{data,error}=await sb.from('pedidos').select('id,cantidad_pedida,cantidad_recibida,estado,usuario,creado_en,productos(nombre)').order('creado_en',{ascending:false}).limit(150);
+  if(error||!data){tbody.innerHTML='<tr><td colspan="5" class="empty">Error</td></tr>';return}
+  tbody.innerHTML=data.map(r=>`<tr>
+    <td>${r.productos?esc(r.productos.nombre):'—'}</td>
+    <td>${round2(r.cantidad_recibida)} / ${round2(r.cantidad_pedida)}</td>
+    <td>${esc(PEDIDO_ESTADO[r.estado]||r.estado)}${(r.estado==='pendiente'||r.estado==='parcial')?` <button class="btn" data-recibir="${r.id}" style="width:auto;padding:4px 8px;font-size:11px">Recibir</button>`:''}</td>
+    <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin compras registradas</td></tr>';
+  bindPedidoRows(tbody);
+}
+async function loadAjustes(){
+  const tbody=document.querySelector('#tabla-ajustes tbody');
+  tbody.innerHTML='<tr><td colspan="6" class="empty">Cargando…</td></tr>';
+  const{data,error}=await sb.from('ajustes').select('stock_anterior,stock_nuevo,diferencia,motivo,usuario,creado_en,productos(nombre)').order('creado_en',{ascending:false}).limit(150);
+  if(error||!data){tbody.innerHTML='<tr><td colspan="6" class="empty">Error</td></tr>';return}
+  tbody.innerHTML=data.map(r=>`<tr>
+    <td>${r.productos?esc(r.productos.nombre):'—'}</td>
+    <td>${round2(r.stock_anterior)} → ${round2(r.stock_nuevo)}</td>
+    <td class="${r.diferencia<0?'neg':'pos'}">${r.diferencia>0?'+':''}${round2(r.diferencia)}</td>
+    <td>${esc(r.motivo)}</td>
+    <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin ajustes</td></tr>';
+}
 async function loadCompras(){
+  loadPedidosHist();
   const tbody=document.querySelector('#tabla-compras tbody');
   tbody.innerHTML='<tr><td colspan="4" class="empty">Cargando…</td></tr>';
   const{data,error}=await sb.from('compras').select('cantidad_comprada,usuario,creado_en,productos(nombre)').order('creado_en',{ascending:false}).limit(150);
@@ -843,7 +1028,7 @@ async function loadCompras(){
   tbody.innerHTML=data.map(r=>`<tr>
     <td>${r.productos?esc(r.productos.nombre):'—'}</td>
     <td class="pos">+${r.cantidad_comprada}</td>
-    <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin compras</td></tr>';
+    <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin recepciones</td></tr>';
 }
 async function loadAdmin(){
   const cont=document.getElementById('admin-users');cont.innerHTML='<div class="empty">Cargando…</div>';
