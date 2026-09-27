@@ -10,6 +10,20 @@
 -- Toda escritura pasa por funciones (RPC). Las tablas nuevas solo permiten
 -- SELECT desde el cliente, así nadie puede alterar cantidades a mano.
 
+-- ─── Verificación previa ───────────────────────────────────────
+-- Si productos.id no es uuid, se detiene aquí con un mensaje claro
+-- (antes de crear nada) en vez de fallar a medias.
+do $$
+declare t text;
+begin
+  select format_type(a.atttypid, a.atttypmod) into t
+    from pg_attribute a
+   where a.attrelid = 'public.productos'::regclass and a.attname = 'id' and not a.attisdropped;
+  if t is distinct from 'uuid' then
+    raise exception 'productos.id es de tipo % (se esperaba uuid). Avisa antes de continuar.', coalesce(t, 'desconocido');
+  end if;
+end $$;
+
 -- ─── Helper de rol ───────────────────────────────────────────────
 create or replace function public.inv_es_jefe()
 returns boolean language sql stable security definer set search_path = public as $$
@@ -80,7 +94,7 @@ end $$;
 -- Único punto donde una compra sube stock: inserta en compras solo lo que llegó.
 create or replace function public.recibir_pedido(p_pedido uuid, p_cantidad numeric)
 returns public.pedidos language plpgsql security definer set search_path = public as $$
-declare v public.pedidos; v_falta numeric;
+declare v public.pedidos; v_falta numeric; v_antes numeric; v_despues numeric;
 begin
   if auth.uid() is null then raise exception 'No autenticado'; end if;
   if p_cantidad is null or p_cantidad <= 0 then raise exception 'Cantidad inválida'; end if;
@@ -97,8 +111,15 @@ begin
    where id = p_pedido
   returning * into v;
 
+  select coalesce(stock_actual, 0) into v_antes from public.productos where id = v.producto_id for update;
   insert into public.compras (producto_id, cantidad_comprada, usuario, pedido_id)
   values (v.producto_id, p_cantidad, public.inv_email_actual(), v.id);
+  -- Normalmente el trigger existente de compras ya subió el stock. Si no existe
+  -- ese trigger, se sube aquí; nunca se suma dos veces.
+  select coalesce(stock_actual, 0) into v_despues from public.productos where id = v.producto_id;
+  if v_despues = v_antes then
+    update public.productos set stock_actual = v_antes + p_cantidad where id = v.producto_id;
+  end if;
   return v;
 end $$;
 
@@ -145,3 +166,14 @@ grant execute on function public.registrar_pedido(uuid, numeric, text) to authen
 grant execute on function public.recibir_pedido(uuid, numeric)         to authenticated;
 grant execute on function public.cancelar_pedido(uuid)                 to authenticated;
 grant execute on function public.registrar_ajuste(uuid, numeric, text) to authenticated;
+
+-- Que la API (PostgREST) vea las tablas y funciones nuevas de inmediato.
+notify pgrst, 'reload schema';
+
+-- ─── OPCIONAL (recomendado): cerrar la vía directa de compras ─────
+-- La app ya no inserta en compras directamente; solo recibir_pedido lo hace.
+-- Mientras este permiso siga abierto, alguien con la consola del navegador
+-- podría insertar en compras y subir stock sin pedido. Quita los "--" para
+-- aplicarlo. Ojo: cualquier copia VIEJA de la app que siga abierta en un
+-- celular dejará de poder "Registrar compra" (lo cual es lo que se busca).
+-- revoke insert, update, delete on public.compras from anon, authenticated;

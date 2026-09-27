@@ -845,7 +845,7 @@ function qtySugerida(p){
   const stock=Number(p.stock_actual)||0;
   const max=Number(p.maximo)||0;
   const enc=enCaminoDe(p);
-  if(max>0) return Math.max(0,round2(max-stock-enc));
+  if(max>stock) return Math.max(0,round2(max-stock-enc));
   // si no hay max, al menos 1 si está faltante y no hay nada en camino
   if(enc<=0&&(p.estado==='Agotado'||p.estado==='Urgente Comprar'||p.estado==='Necesario Comprar')) return 1;
   return 0;
@@ -909,9 +909,12 @@ function renderReabastecer(){
   const prio={'Agotado':0,'Urgente Comprar':1,'Necesario Comprar':2};
   list.sort((a,b)=>(prio[a.estado]??9)-(prio[b.estado]??9)||a.nombre.localeCompare(b.nombre));
 
-  // init suggested qty if not set
+  // init suggested qty if not set. Se recalcula si cambió stock o lo que viene en camino
+  // (compra registrada, recibida, cancelada, salida o ajuste), para no ofrecer de más.
+  if(!window._reabBase) window._reabBase={};
   list.forEach(p=>{
-    if(window._reabQty[p.id]===undefined) window._reabQty[p.id]=qtySugerida(p);
+    const base=round2((Number(p.stock_actual)||0)+enCaminoDe(p));
+    if(window._reabQty[p.id]===undefined||window._reabBase[p.id]!==base){window._reabQty[p.id]=qtySugerida(p);window._reabBase[p.id]=base}
   });
 
   // TOTAL = suma de sugeridos/elegidos del listado filtrado
@@ -977,7 +980,7 @@ function renderReabastecer(){
       if(!prod||qty<=0)return;
       btn.disabled=true;btn.textContent='…';
       const ok=await registrarPedido(prod,qty);
-      if(ok) window._reabQty[id]=0;
+      if(ok) delete window._reabQty[id];
       renderReabastecer();
     };
   });
@@ -994,14 +997,15 @@ async function loadHistorial(){
     <td>${r.stock_anterior??'—'} → ${r.stock_nuevo??'—'}</td>
     <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="6" class="empty">Sin movimientos</td></tr>';
 }
+function nombreProducto(id){const p=allProductos.find(x=>x.id===id);return p?p.nombre:'—'}
 const PEDIDO_ESTADO={pendiente:'Pendiente',parcial:'Parcial',completo:'Completo',cancelado:'Cancelado'};
 async function loadPedidosHist(){
   const tbody=document.querySelector('#tabla-pedidos tbody');
   tbody.innerHTML='<tr><td colspan="5" class="empty">Cargando…</td></tr>';
-  const{data,error}=await sb.from('pedidos').select('id,cantidad_pedida,cantidad_recibida,estado,usuario,creado_en,productos(nombre)').order('creado_en',{ascending:false}).limit(150);
+  const{data,error}=await sb.from('pedidos').select('id,producto_id,cantidad_pedida,cantidad_recibida,estado,usuario,creado_en').order('creado_en',{ascending:false}).limit(150);
   if(error||!data){tbody.innerHTML='<tr><td colspan="5" class="empty">Error</td></tr>';return}
   tbody.innerHTML=data.map(r=>`<tr>
-    <td>${r.productos?esc(r.productos.nombre):'—'}</td>
+    <td>${esc(nombreProducto(r.producto_id))}</td>
     <td>${round2(r.cantidad_recibida)} / ${round2(r.cantidad_pedida)}</td>
     <td>${esc(PEDIDO_ESTADO[r.estado]||r.estado)}${(r.estado==='pendiente'||r.estado==='parcial')?` <button class="btn" data-recibir="${r.id}" style="width:auto;padding:4px 8px;font-size:11px">Recibir</button>`:''}</td>
     <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sin compras registradas</td></tr>';
@@ -1010,10 +1014,10 @@ async function loadPedidosHist(){
 async function loadAjustes(){
   const tbody=document.querySelector('#tabla-ajustes tbody');
   tbody.innerHTML='<tr><td colspan="6" class="empty">Cargando…</td></tr>';
-  const{data,error}=await sb.from('ajustes').select('stock_anterior,stock_nuevo,diferencia,motivo,usuario,creado_en,productos(nombre)').order('creado_en',{ascending:false}).limit(150);
+  const{data,error}=await sb.from('ajustes').select('producto_id,stock_anterior,stock_nuevo,diferencia,motivo,usuario,creado_en').order('creado_en',{ascending:false}).limit(150);
   if(error||!data){tbody.innerHTML='<tr><td colspan="6" class="empty">Error</td></tr>';return}
   tbody.innerHTML=data.map(r=>`<tr>
-    <td>${r.productos?esc(r.productos.nombre):'—'}</td>
+    <td>${esc(nombreProducto(r.producto_id))}</td>
     <td>${round2(r.stock_anterior)} → ${round2(r.stock_nuevo)}</td>
     <td class="${r.diferencia<0?'neg':'pos'}">${r.diferencia>0?'+':''}${round2(r.diferencia)}</td>
     <td>${esc(r.motivo)}</td>
