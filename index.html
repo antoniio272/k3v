@@ -1069,6 +1069,7 @@
         <button type="button" onclick="showTab('dashboard')" id="tab-dashboard" class="tab-btn admin-only px-4 py-3 tab-active whitespace-nowrap">Dashboard</button>
         <button type="button" onclick="showTab('nuevo')" id="tab-nuevo" class="tab-btn px-4 py-3 whitespace-nowrap">Movimiento</button>
         <button type="button" onclick="showTab('historial')" id="tab-historial" class="tab-btn px-4 py-3 whitespace-nowrap">Historial</button>
+        <button type="button" onclick="showTab('inventario')" id="tab-inventario" class="tab-btn px-4 py-3 whitespace-nowrap">Inventario</button>
         <button type="button" onclick="showTab('individual')" id="tab-individual" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Desglose</button>
         <button type="button" onclick="showTab('ahorros')" id="tab-ahorros" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorros</button>
         <button type="button" onclick="showTab('ahorroespecial')" id="tab-ahorroespecial" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorro esp.</button>
@@ -1326,6 +1327,87 @@
           <p class="font-medium text-gray-400">No hay movimientos</p>
           <p class="text-sm mt-1">Registra el primero desde + Movimiento</p>
           <button type="button" onclick="showTab('nuevo')" class="btn-yellow mt-4 px-4 py-2 rounded-lg text-sm font-medium">+ Nuevo movimiento</button>
+        </div>
+      </section>
+
+      <!-- ========== INVENTARIO ========== -->
+      <section id="view-inventario" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="page-title">Inventario</h2>
+            <p class="text-sm text-gray-400 mt-0.5">Stock actual y pedidos pendientes de recibir</p>
+          </div>
+          <div class="flex gap-2 flex-wrap">
+            <button type="button" onclick="mostrarFormProducto()" class="btn-outline admin-only px-3.5 py-2 rounded-lg text-[13px]">+ Producto</button>
+            <button type="button" onclick="mostrarFormPedido()" class="btn-yellow admin-only px-3.5 py-2 rounded-lg text-[13px]">+ Nuevo pedido</button>
+            <button type="button" onclick="cargarTodo(true)" class="btn-outline px-3.5 py-2 rounded-lg text-[13px]">Actualizar</button>
+          </div>
+        </div>
+
+        <div id="form-producto" class="hidden card rounded-xl p-5 space-y-4 admin-only">
+          <h3 id="form-producto-titulo" class="font-bold text-lg">Nuevo producto</h3>
+          <input type="hidden" id="prod-original" />
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Nombre</label>
+            <input type="text" id="prod-nombre" class="w-full rounded-lg px-3 py-2.5" placeholder="Ej. Coca-Cola (paquete de 24)" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Stock actual</label>
+            <input type="number" id="prod-stock" step="1" min="0" class="w-full rounded-lg px-3 py-2.5" placeholder="0" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Nota (opcional)</label>
+            <input type="text" id="prod-notas" class="w-full rounded-lg px-3 py-2.5" placeholder="Ej. se guarda en la bodega chica" />
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="guardarProducto()" id="btn-guardar-prod" class="btn-yellow flex-1 py-2.5 rounded-lg font-medium">Guardar</button>
+            <button type="button" onclick="ocultarFormProducto()" class="flex-1 py-2.5 rounded-lg border border-gray-600 text-gray-300">Cancelar</button>
+          </div>
+        </div>
+
+        <div id="form-pedido" class="hidden card rounded-xl p-5 space-y-4 admin-only">
+          <h3 class="font-bold text-lg">Nuevo pedido</h3>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Producto</label>
+            <select id="pedido-producto" class="w-full rounded-lg px-3 py-2.5"></select>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm text-gray-300 mb-1">Cantidad pedida</label>
+              <input type="number" id="pedido-cantidad" step="1" min="0" class="w-full rounded-lg px-3 py-2.5" placeholder="0" />
+            </div>
+            <div>
+              <label class="block text-sm text-gray-300 mb-1">Fecha</label>
+              <input type="date" id="pedido-fecha" class="w-full rounded-lg px-3 py-2.5" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Nota (opcional)</label>
+            <input type="text" id="pedido-notas" class="w-full rounded-lg px-3 py-2.5" placeholder="Ej. proveedor, para qué es..." />
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="guardarPedido()" id="btn-guardar-pedido" class="btn-yellow flex-1 py-2.5 rounded-lg font-medium">Registrar pedido</button>
+            <button type="button" onclick="ocultarFormPedido()" class="flex-1 py-2.5 rounded-lg border border-gray-600 text-gray-300">Cancelar</button>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-white mb-3">Stock</h3>
+          <div id="productos-cards" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+          <div id="productos-empty" class="hidden empty-state">
+            <div class="empty-icon">📦</div>
+            <p class="font-medium text-gray-400">Sin productos registrados</p>
+            <p class="text-sm mt-1 admin-only">Agrega el primero con «+ Producto»</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-white mb-3">Pedidos pendientes de recibir</h3>
+          <div id="pedidos-lista" class="space-y-3"></div>
+          <div id="pedidos-empty" class="hidden empty-state">
+            <div class="empty-icon">🚚</div>
+            <p class="font-medium text-gray-400">No hay pedidos pendientes</p>
+          </div>
         </div>
       </section>
 
@@ -1636,6 +1718,10 @@
         <span class="di-icon">☰</span>
         <span class="di-label">Historial<span class="di-hint block">Todos los registros</span></span>
       </button>
+      <button type="button" class="drawer-item" data-tab="inventario" onclick="navegarDrawer('inventario')">
+        <span class="di-icon">📦</span>
+        <span class="di-label">Inventario<span class="di-hint block">Stock y pedidos pendientes</span></span>
+      </button>
 
       <div class="drawer-section admin-only">Ahorros</div>
       <button type="button" class="drawer-item admin-only" data-tab="ahorros" onclick="navegarDrawer('ahorros')">
@@ -1852,6 +1938,9 @@
     let realtimeChannel = null;
     let sueldosPagadosCargados = false;
     let usuarios = [];
+    let productos = [];
+    let pedidosCompra = [];
+    let editandoProducto = null;
     let isLocked = false;
     let inactivityTimer = null;
     let semanaOffset = 0;
@@ -2593,6 +2682,41 @@
       };
     }
 
+    function mapProducto(row) {
+      return {
+        id: row.id,
+        nombre: row.nombre || "",
+        stock: Number(row.stock) || 0,
+        notas: row.notas || ""
+      };
+    }
+
+    function mapPedidoCompra(row) {
+      return {
+        id: row.id,
+        producto: row.producto || "",
+        cantidadPedida: Number(row.cantidad_pedida) || 0,
+        cantidadRecibida: Number(row.cantidad_recibida) || 0,
+        estado: row.estado || "pendiente",
+        fecha: row.fecha ? String(row.fecha).slice(0, 10) : "",
+        responsable: row.responsable || "",
+        notas: row.notas || "",
+        created_at: row.created_at || ""
+      };
+    }
+
+    /** Cuánto falta por recibir de un pedido (nunca negativo) */
+    function pedidoPendiente(p) {
+      return Math.max(0, Math.round((p.cantidadPedida - p.cantidadRecibida) * 100) / 100);
+    }
+
+    /** Suma de lo pendiente (pedidos activos, no cancelados) para un producto por nombre */
+    function enCaminoPorProducto(nombreProducto) {
+      return (pedidosCompra || [])
+        .filter(p => p.producto === nombreProducto && p.estado !== "cancelado" && pedidoPendiente(p) > 0.009)
+        .reduce((s, p) => s + pedidoPendiente(p), 0);
+    }
+
     function mapMovimiento(row) {
       let fecha = row.fecha || "";
       let semana = row.semana || "";
@@ -2685,6 +2809,8 @@
           empleados,
           movimientos,
           sueldosPagadosDB,
+          productos,
+          pedidosCompra,
           ts: Date.now()
         }));
       } catch (e) {}
@@ -2702,6 +2828,8 @@
           sueldosPagadosDB = data.sueldosPagadosDB;
           sueldosPagadosCargados = true;
         }
+        productos = data.productos || [];
+        pedidosCompra = data.pedidosCompra || [];
         return true;
       } catch (e) {
         return false;
@@ -2721,6 +2849,7 @@
       if (typeof renderPrestamos === "function") renderPrestamos();
       if (typeof renderGastosNegocio === "function") renderGastosNegocio();
       if (typeof renderIngresosNegocio === "function") renderIngresosNegocio();
+      if (typeof renderInventario === "function") renderInventario();
     }
 
     async function cargarPerfil(userId) {
@@ -2763,10 +2892,12 @@
       }
       try {
         setStatus("Cargando...");
-        const [empRes, movRes, sueldosRes] = await Promise.all([
+        const [empRes, movRes, sueldosRes, prodRes, pedRes] = await Promise.all([
           fetchAllRows("empleados", "*", "nombre", true),
           fetchAllRows("movimientos", "*", "id", false),
-          fetchAllRows("sueldos_pagados", "semana,empleado")
+          fetchAllRows("sueldos_pagados", "semana,empleado"),
+          fetchAllRows("productos", "*", "nombre", true),
+          fetchAllRows("pedidos_compra", "*", "id", false)
         ]);
         if (empRes.error) throw empRes.error;
         if (movRes.error) throw movRes.error;
@@ -2778,6 +2909,11 @@
           sueldosPagadosDB = sueldosRes.data || [];
           sueldosPagadosCargados = true;
         }
+        // productos/pedidos_compra son opcionales (inventario) -> si no existen aún, no rompe el resto
+        if (prodRes.error) console.warn("Tabla productos no existe o sin permiso", prodRes.error);
+        else productos = (prodRes.data || []).map(mapProducto);
+        if (pedRes.error) console.warn("Tabla pedidos_compra no existe o sin permiso", pedRes.error);
+        else pedidosCompra = (pedRes.data || []).map(mapPedidoCompra);
 
         empleados = (empRes.data || []).map(mapEmpleado);
         movimientos = (movRes.data || []).map(mapMovimiento);
@@ -2795,14 +2931,18 @@
     async function cargarTodoOptimizado() {
       // versión ligera usada por realtime, sin cache
       try {
-        const [empRes, movRes, sueldosRes] = await Promise.all([
+        const [empRes, movRes, sueldosRes, prodRes, pedRes] = await Promise.all([
           fetchAllRows("empleados", "*", "nombre", true),
           fetchAllRows("movimientos", "*", "id", false),
-          fetchAllRows("sueldos_pagados", "semana,empleado")
+          fetchAllRows("sueldos_pagados", "semana,empleado"),
+          fetchAllRows("productos", "*", "nombre", true),
+          fetchAllRows("pedidos_compra", "*", "id", false)
         ]);
         if (!empRes.error) empleados = (empRes.data||[]).map(mapEmpleado);
         if (!movRes.error) movimientos = (movRes.data||[]).map(mapMovimiento);
         if (!sueldosRes.error) { sueldosPagadosDB = sueldosRes.data||[]; sueldosPagadosCargados=true; }
+        if (!prodRes.error) productos = (prodRes.data||[]).map(mapProducto);
+        if (!pedRes.error) pedidosCompra = (pedRes.data||[]).map(mapPedidoCompra);
         guardarCache();
         aplicarDatosEnPantalla();
         setStatus("Sync " + new Date().toLocaleTimeString("es-MX",{timeZone:APP_TZ,hour:"2-digit",minute:"2-digit"}));
@@ -2832,6 +2972,14 @@
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'empleados' }, (payload) => {
           console.log('Realtime empleados', payload.eventType);
+          cargarTodoOptimizadoDebounced();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'productos' }, (payload) => {
+          console.log('Realtime productos', payload.eventType);
+          cargarTodoOptimizadoDebounced();
+        })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'pedidos_compra' }, (payload) => {
+          console.log('Realtime pedidos_compra', payload.eventType);
           cargarTodoOptimizadoDebounced();
         })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'sueldos_pagados' }, (payload) => {
@@ -3291,9 +3439,12 @@
         name = "nuevo";
       }
 
-      const tabs = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const tabs = ["dashboard", "nuevo", "historial", "inventario", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       if (name === "individual") {
         llenarSelectIndividual();
+      }
+      if (name === "inventario" && typeof renderInventario === "function") {
+        renderInventario();
       }
       if (name === "gastosnegocio" && typeof renderGastosNegocio === "function") {
         renderGastosNegocio();
@@ -6420,6 +6571,314 @@
       } catch (err) {
         console.error(err);
         showToast(err.message || "Error al borrar semana", "error");
+      }
+    }
+
+    // =====================================================
+    // INVENTARIO (productos + pedidos pendientes de recibir)
+    // =====================================================
+    // Regla del negocio: un pedido NO aumenta el stock al registrarse. Solo cuando
+    // alguien lo marca como "recibido" (parcial o completo) se suma al stock real.
+    // Así el inventario nunca miente: si dice 0 pero ya se pidió, se ve el número
+    // "en camino" aparte, en vez de mezclarlo con lo que físicamente ya está.
+
+    function renderInventario() {
+      renderProductosCards();
+      renderPedidosPendientesLista();
+    }
+
+    function renderProductosCards() {
+      const cont = document.getElementById("productos-cards");
+      const empty = document.getElementById("productos-empty");
+      if (!cont) return;
+      if (!productos.length) {
+        cont.innerHTML = "";
+        if (empty) empty.classList.remove("hidden");
+        return;
+      }
+      if (empty) empty.classList.add("hidden");
+      const isAdmin = currentUser && currentUser.rol === "admin";
+      const lista = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre));
+      cont.innerHTML = lista.map(p => {
+        const enCamino = enCaminoPorProducto(p.nombre);
+        const sinStock = p.stock <= 0;
+        return `
+          <div class="card rounded-xl p-4">
+            <div class="flex items-start justify-between gap-2 mb-1.5">
+              <h4 class="font-semibold text-white text-[14px] truncate" title="${esc(p.nombre)}">${esc(p.nombre)}</h4>
+              ${isAdmin ? `
+                <div class="flex gap-1 shrink-0">
+                  <button type="button" onclick='editarProducto(${jsArg(p.nombre)}, ${p.stock}, ${jsArg(p.notas || "")})' class="text-aragan-yellow text-xs px-1.5 py-0.5 rounded hover:bg-aragan-yellow/10">Editar</button>
+                  <button type="button" onclick='borrarProducto(${jsArg(p.nombre)})' class="text-[#e08888] text-xs px-1.5 py-0.5 rounded hover:bg-[rgba(196,84,84,0.12)]">Eliminar</button>
+                </div>
+              ` : ""}
+            </div>
+            <div class="flex items-baseline gap-2 flex-wrap">
+              <span class="text-2xl font-bold tabular-nums ${sinStock ? "text-[#e08888]" : "text-white"}">${p.stock}</span>
+              ${enCamino > 0 ? `<span class="text-[13px] font-medium text-[var(--text-muted)] opacity-60" title="Ya pedido, todavía no llega">+${enCamino} en camino</span>` : ""}
+            </div>
+            ${p.notas ? `<p class="text-xs text-gray-500 mt-1.5 truncate" title="${esc(p.notas)}">${esc(p.notas)}</p>` : ""}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderPedidosPendientesLista() {
+      const cont = document.getElementById("pedidos-lista");
+      const empty = document.getElementById("pedidos-empty");
+      if (!cont) return;
+      const isAdmin = currentUser && currentUser.rol === "admin";
+      const activos = (pedidosCompra || [])
+        .filter(p => p.estado !== "cancelado" && p.estado !== "completo")
+        .sort((a, b) => (a.fecha || "").localeCompare(b.fecha || ""));
+      if (!activos.length) {
+        cont.innerHTML = "";
+        if (empty) empty.classList.remove("hidden");
+        return;
+      }
+      if (empty) empty.classList.add("hidden");
+      cont.innerHTML = activos.map(p => {
+        const pendiente = pedidoPendiente(p);
+        const pct = p.cantidadPedida > 0 ? Math.min(100, Math.round((p.cantidadRecibida / p.cantidadPedida) * 100)) : 0;
+        const esParcial = p.cantidadRecibida > 0.009;
+        const estadoLabel = esParcial ? "Parcial" : "Pendiente";
+        const estadoClase = esParcial
+          ? "bg-[rgba(212,146,10,0.12)] text-[#e8b04a]"
+          : "bg-[rgba(74,155,191,0.12)] text-[#6eb8d8]";
+        const nota = notasVisibles(p.notas);
+        return `
+          <div class="card rounded-xl p-4 space-y-2.5">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <h4 class="font-semibold text-white text-[14px] truncate">${esc(p.producto)}</h4>
+                <p class="text-xs text-gray-500 mt-0.5">Pedido el ${formatDateDisplay(p.fecha)}${p.responsable ? " · " + esc(p.responsable) : ""}${nota ? " · " + esc(nota) : ""}</p>
+              </div>
+              <span class="text-[10px] font-bold px-2 py-1 rounded-md shrink-0 ${estadoClase}">${estadoLabel}</span>
+            </div>
+            <div class="text-[13px] text-gray-400">
+              Recibido <strong class="text-white tabular-nums">${p.cantidadRecibida}</strong> de <strong class="text-white tabular-nums">${p.cantidadPedida}</strong>
+              <span class="text-[var(--text-dim)]"> · faltan ${pendiente}</span>
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-[var(--bg-elevated)] overflow-hidden">
+              <div class="h-full bg-[#5ecf8f]" style="width:${pct}%"></div>
+            </div>
+            <div class="flex gap-2 pt-0.5">
+              <button type="button" onclick='recibirPedido(${jsArg(String(p.id))})' class="btn-yellow flex-1 py-2 rounded-lg text-xs">Recibir</button>
+              ${isAdmin ? `<button type="button" onclick='cancelarPedido(${jsArg(String(p.id))})' class="btn-ghost px-3 py-2 rounded-lg text-xs text-[#e08888]">Cancelar</button>` : ""}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function mostrarFormProducto() {
+      editandoProducto = null;
+      document.getElementById("form-producto-titulo").textContent = "Nuevo producto";
+      document.getElementById("prod-original").value = "";
+      document.getElementById("prod-nombre").value = "";
+      document.getElementById("prod-stock").value = "";
+      document.getElementById("prod-notas").value = "";
+      document.getElementById("form-producto").classList.remove("hidden");
+    }
+
+    function ocultarFormProducto() {
+      document.getElementById("form-producto").classList.add("hidden");
+    }
+
+    function editarProducto(nombre, stock, notas) {
+      editandoProducto = nombre;
+      document.getElementById("form-producto-titulo").textContent = "Editar producto";
+      document.getElementById("prod-original").value = nombre;
+      document.getElementById("prod-nombre").value = nombre;
+      document.getElementById("prod-stock").value = stock;
+      document.getElementById("prod-notas").value = notas || "";
+      document.getElementById("form-producto").classList.remove("hidden");
+    }
+
+    async function guardarProducto() {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      if (isSaving) return;
+      const nombre = document.getElementById("prod-nombre").value.trim();
+      const stock = parseFloat(document.getElementById("prod-stock").value) || 0;
+      const notas = document.getElementById("prod-notas").value.trim();
+      const original = document.getElementById("prod-original").value;
+      if (!nombre) return showToast("Escribe el nombre del producto", "error");
+      if (productos.some(p => p.nombre === nombre && p.nombre !== original)) {
+        return showToast(`Ya existe un producto llamado "${nombre}"`, "error");
+      }
+
+      isSaving = true;
+      const btn = document.getElementById("btn-guardar-prod");
+      setButtonLoading(btn, true, "Guardar");
+      try {
+        if (original) {
+          const { error } = await sb.from("productos").update({ nombre, stock, notas }).eq("nombre", original);
+          if (error) throw error;
+          if (original !== nombre) {
+            // Igual que con empleados: si se renombra, reasignar los pedidos que lo referencian
+            const { error: e2 } = await sb.from("pedidos_compra").update({ producto: nombre }).eq("producto", original);
+            if (e2) console.warn("No se pudieron reasignar pedidos al renombrar producto", e2);
+          }
+          await logAuditoria("PRODUCTO_UPDATE", { id: null, fecha: localDateStr(new Date()), tipo: "Producto", monto: stock, empleado: nombre, notas: `Editado desde "${original}"`, responsable: currentUser.usuario });
+          showToast("Producto actualizado");
+        } else {
+          const { error } = await sb.from("productos").insert({ nombre, stock, notas });
+          if (error) throw error;
+          await logAuditoria("PRODUCTO_INSERT", { id: null, fecha: localDateStr(new Date()), tipo: "Producto", monto: stock, empleado: nombre, notas, responsable: currentUser.usuario });
+          showToast("Producto agregado");
+        }
+        ocultarFormProducto();
+        await cargarTodo();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error al guardar producto", "error");
+      } finally {
+        isSaving = false;
+        setButtonLoading(btn, false, "Guardar");
+      }
+    }
+
+    async function borrarProducto(nombre) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const enCamino = enCaminoPorProducto(nombre);
+      if (enCamino > 0) {
+        return showToast(`No se puede eliminar: tiene ${enCamino} unidad(es) en camino. Cancela o recibe esos pedidos primero.`, "error");
+      }
+      if (!confirm(`¿Eliminar el producto "${nombre}" del inventario?`)) return;
+      try {
+        const { error } = await sb.from("productos").delete().eq("nombre", nombre);
+        if (error) throw error;
+        await logAuditoria("PRODUCTO_DELETE", { id: null, fecha: localDateStr(new Date()), tipo: "Producto", monto: 0, empleado: nombre, notas: "Producto eliminado", responsable: currentUser.usuario });
+        showToast("Producto eliminado");
+        await cargarTodo();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error al eliminar producto", "error");
+      }
+    }
+
+    function llenarSelectPedidoProducto() {
+      const sel = document.getElementById("pedido-producto");
+      if (!sel) return;
+      const prev = sel.value;
+      sel.innerHTML = (productos || []).map(p => `<option value="${esc(p.nombre)}">${esc(p.nombre)}</option>`).join("")
+        || `<option value="">Sin productos — agrega uno primero</option>`;
+      if (prev && [...sel.options].some(o => o.value === prev)) sel.value = prev;
+      const f = document.getElementById("pedido-fecha");
+      if (f && !f.value) f.value = localDateStr(new Date());
+    }
+
+    function mostrarFormPedido() {
+      if (!productos.length) {
+        return showToast("Agrega al menos un producto antes de registrar un pedido", "error");
+      }
+      llenarSelectPedidoProducto();
+      document.getElementById("pedido-cantidad").value = "";
+      document.getElementById("pedido-notas").value = "";
+      document.getElementById("form-pedido").classList.remove("hidden");
+    }
+
+    function ocultarFormPedido() {
+      document.getElementById("form-pedido").classList.add("hidden");
+    }
+
+    async function guardarPedido() {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin puede registrar pedidos", "error");
+      if (isSaving) return;
+      const producto = document.getElementById("pedido-producto").value;
+      const cantidad = parseFloat(document.getElementById("pedido-cantidad").value);
+      const fecha = document.getElementById("pedido-fecha").value || localDateStr(new Date());
+      const notas = document.getElementById("pedido-notas").value.trim();
+      if (!producto) return showToast("Elige un producto", "error");
+      if (!cantidad || cantidad <= 0) return showToast("Cantidad inválida", "error");
+      if (!confirm(`¿Registrar pedido de ${cantidad} × "${producto}"?\n\nNo se suma al stock todavía — solo al recibirlo.`)) return;
+
+      isSaving = true;
+      const btn = document.getElementById("btn-guardar-pedido");
+      setButtonLoading(btn, true, "Registrar pedido");
+      try {
+        const row = {
+          producto, cantidad_pedida: cantidad, cantidad_recibida: 0, estado: "pendiente",
+          fecha, notas, responsable: currentUser.usuario || ""
+        };
+        const { data, error } = await sb.from("pedidos_compra").insert(row).select("*");
+        if (error) throw error;
+        const inserted = (data && data[0]) || row;
+        await logAuditoria("PEDIDO_INSERT", { id: inserted.id, fecha, tipo: "Pedido", monto: cantidad, empleado: producto, notas, responsable: currentUser.usuario });
+        showToast("Pedido registrado");
+        ocultarFormPedido();
+        await cargarTodo();
+        showTab("inventario");
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error al registrar pedido", "error");
+      } finally {
+        isSaving = false;
+        setButtonLoading(btn, false, "Registrar pedido");
+      }
+    }
+
+    async function recibirPedido(pedidoId) {
+      if (!currentUser) return showToast("Inicia sesión", "error");
+      if (isSaving) return;
+      const p = (pedidosCompra || []).find(x => String(x.id) === String(pedidoId));
+      if (!p) return showToast("Pedido no encontrado", "error");
+      const pendiente = pedidoPendiente(p);
+      if (pendiente <= 0) return showToast("Este pedido ya está completo", "error");
+
+      const raw = prompt(
+        `Recibir "${p.producto}"\nPendiente: ${pendiente} de ${p.cantidadPedida}\n\n¿Cuánto llegó ahora? (puede ser parcial)`,
+        String(pendiente)
+      );
+      if (raw === null) return;
+      const cantidad = Math.round((parseFloat(String(raw).replace(",", ".")) || 0) * 100) / 100;
+      if (cantidad <= 0) return showToast("Cantidad inválida", "error");
+      if (cantidad > pendiente + 0.001) return showToast(`No puede ser mayor a lo pendiente (${pendiente})`, "error");
+
+      isSaving = true;
+      try {
+        const nuevaRecibida = Math.round((p.cantidadRecibida + cantidad) * 100) / 100;
+        const nuevoEstado = nuevaRecibida >= p.cantidadPedida - 0.009 ? "completo" : "parcial";
+        const { error: e1 } = await sb.from("pedidos_compra")
+          .update({ cantidad_recibida: nuevaRecibida, estado: nuevoEstado })
+          .eq("id", p.id);
+        if (e1) throw e1;
+
+        const producto = productos.find(x => x.nombre === p.producto);
+        const nuevoStock = Math.round(((producto ? producto.stock : 0) + cantidad) * 100) / 100;
+        const { error: e2 } = await sb.from("productos").update({ stock: nuevoStock }).eq("nombre", p.producto);
+        if (e2) throw e2;
+
+        await logAuditoria("PEDIDO_RECIBIDO", {
+          id: p.id, fecha: localDateStr(new Date()), tipo: "RecepcionPedido", monto: cantidad,
+          empleado: p.producto, notas: `Recibido ${cantidad} de ${p.producto} (pedido #${p.id}, ahora ${nuevaRecibida}/${p.cantidadPedida})`,
+          responsable: currentUser.usuario
+        });
+        showToast(nuevoEstado === "completo" ? `Pedido completo: ${p.producto}` : `Recibido ${cantidad} de ${p.producto} · faltan ${pedidoPendiente({ ...p, cantidadRecibida: nuevaRecibida })}`);
+        await cargarTodo();
+        showTab("inventario");
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error al registrar recepción", "error");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    async function cancelarPedido(pedidoId) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const p = (pedidosCompra || []).find(x => String(x.id) === String(pedidoId));
+      if (!p) return showToast("Pedido no encontrado", "error");
+      if (!confirm(`¿Cancelar el pedido de ${pedidoPendiente(p)} × "${p.producto}" pendientes?\n\nLo ya recibido (${p.cantidadRecibida}) se queda en el stock; solo se cancela lo que falta.`)) return;
+      try {
+        const { error } = await sb.from("pedidos_compra").update({ estado: "cancelado" }).eq("id", p.id);
+        if (error) throw error;
+        await logAuditoria("PEDIDO_CANCELADO", { id: p.id, fecha: localDateStr(new Date()), tipo: "Pedido", monto: pedidoPendiente(p), empleado: p.producto, notas: "Pedido cancelado", responsable: currentUser.usuario });
+        showToast("Pedido cancelado");
+        await cargarTodo();
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error al cancelar pedido", "error");
       }
     }
 
