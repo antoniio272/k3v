@@ -5733,6 +5733,15 @@
     }
 
     /** Solo egresos / ingresos / diferencia del día (por método de pago) */
+    /** Tipos que SÍ son movimiento real de caja (entra o sale efectivo/tarjeta/transferencia ese día).
+     * Bono, Extra, Ahorro, AhorroEspecial, Prestamo, CuotaPrestamo, Descuento, Penalizacion, etc. se
+     * liquidan hasta el cierre de semana vía nómina — no deben contarse como egreso/ingreso de caja
+     * del día, aunque se registren normalmente con su tipo y aparezcan en el detalle del día. */
+    function esMovimientoDeCaja(tipo) {
+      const t = String(tipo || "").trim();
+      return t === "Fiado" || t === "Adelanto" || t === "Gasto" || t === "Ingreso";
+    }
+
     function generarResumenTotalesDia(fechaStr) {
       const dia = (fechaStr || "").slice(0, 10);
       const lista = movimientosDelDia(dia);
@@ -5742,36 +5751,47 @@
       const ingresosMet = { Caja: 0, Tarjeta: 0, Transferencia: 0 };
       let totalEgresos = 0;
       let totalIngresos = 0;
+      let totalOtros = 0;
 
       lista.forEach(m => {
         const total = montoTotalMovimiento(m);
+        const tipo = String(m.tipo || "").trim();
+        if (!esMovimientoDeCaja(tipo)) {
+          // No mueve caja hoy (se liquida en nómina): no entra al egreso/ingreso del día.
+          totalOtros += total;
+          return;
+        }
         const metodo = parseMetodoFromNotas(m.notas) || "Caja";
         const key = (metodo === "Tarjeta" || metodo === "Transferencia") ? metodo : "Caja";
-        if (esMovimientoIngresoNegocio(m) || String(m.tipo || "") === "Ingreso") {
+        if (tipo === "Ingreso") {
           ingresosMet[key] += total;
           totalIngresos += total;
         } else {
-          // Adelantos, gastos, descuentos, etc. cuentan como egresos del día
+          // Fiado, Adelanto, Gasto
           egresosMet[key] += total;
           totalEgresos += total;
         }
       });
 
       const lineas = [];
-      lineas.push(`*EGRESOS (adelantos, gastos, etc.):*`);
+      lineas.push(`*EGRESOS DE CAJA (fiados, adelantos, gastos):*`);
       lineas.push(`- Caja: ${formatMoney(egresosMet.Caja)}`);
       lineas.push(`- Tarjeta: ${formatMoney(egresosMet.Tarjeta)}`);
       lineas.push(`- Transferencia: ${formatMoney(egresosMet.Transferencia)}`);
       lineas.push(`- Total egresos: ${formatMoney(totalEgresos)}`);
       lineas.push("");
-      lineas.push(`*INGRESOS:*`);
+      lineas.push(`*INGRESOS DE CAJA:*`);
       lineas.push(`- Caja: ${formatMoney(ingresosMet.Caja)}`);
       lineas.push(`- Tarjeta: ${formatMoney(ingresosMet.Tarjeta)}`);
       lineas.push(`- Transferencia: ${formatMoney(ingresosMet.Transferencia)}`);
       lineas.push(`- Total ingresos: ${formatMoney(totalIngresos)}`);
       lineas.push("");
       const diff = Math.round((totalIngresos - totalEgresos) * 100) / 100;
-      lineas.push(`*DIFERENCIA (ingresos - egresos): ${formatMoney(diff)}*`);
+      lineas.push(`*DIFERENCIA (ingresos - egresos de caja): ${formatMoney(diff)}*`);
+      if (totalOtros > 0.009) {
+        lineas.push("");
+        lineas.push(`*OTROS MOVIMIENTOS (no afectan caja, se liquidan en nómina): ${formatMoney(totalOtros)}*`);
+      }
       return lineas.join("\n");
     }
 
