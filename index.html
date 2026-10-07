@@ -4643,8 +4643,14 @@
     const TIPOS_CON_MODO = ["Ahorro", "AhorroEspecial", "Bono", "Extra", "Adelanto", "Descuento", "Penalizacion"]; // Fiado es siempre individual
     function tipoUsaModo(t) { return TIPOS_CON_MODO.includes(t); }
 
-    function setModoMonto(modo) {
-      modoMonto = modo;
+    // Adelanto con 2 o más personas siempre se divide entre todos (modo Grupal), sin importar el modo
+    // que estuviera activo antes. Evita el error de dar, por ejemplo, $50 a cada una de 5 personas
+    // cuando en realidad eran $50 a repartir entre las 5. Los botones Individual/Grupal siguen
+    // visibles igual que para los demás tipos; con 1 sola persona seleccionada no aplica esta regla.
+    const TIPOS_SIEMPRE_GRUPAL_CON_VARIOS = ["Adelanto"];
+    function tipoSiempreGrupalConVarios(t) { return TIPOS_SIEMPRE_GRUPAL_CON_VARIOS.includes(t); }
+
+    function _aplicarModoVisual(modo) {
       document.querySelectorAll(".modo-btn").forEach(b => {
         b.classList.remove("modo-active", "bg-aragan-yellow", "text-aragan-black", "border-aragan-yellow");
         b.classList.add("border-gray-600");
@@ -4658,6 +4664,11 @@
       if (label) {
         label.textContent = modo === "individual" ? "Monto por persona" : "Monto total";
       }
+    }
+
+    function setModoMonto(modo) {
+      modoMonto = modo;
+      _aplicarModoVisual(modo);
       actualizarMontoDividido();
     }
 
@@ -4739,6 +4750,14 @@
 
     function actualizarMontoDividido() {
       const checks = document.querySelectorAll(".emp-check:checked");
+
+      // Adelanto con 2+ personas: forzar modo Grupal (ver TIPOS_SIEMPRE_GRUPAL_CON_VARIOS arriba)
+      if (tipoSiempreGrupalConVarios(tipoSeleccionado) && checks.length >= 2 && modoMonto !== "grupal") {
+        modoMonto = "grupal";
+        _aplicarModoVisual("grupal");
+        showToast(`${tipoSeleccionado} con ${checks.length} personas: el monto se divide en partes iguales (modo Grupal)`, "info");
+      }
+
       const totalEmpleados = empleados.length;
       const contador = document.getElementById("contador-seleccionados");
       if (contador) {
