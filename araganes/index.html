@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Sora:wght@500;600;700&display=swap" rel="stylesheet">
+  <title>Los Araganes · Nómina</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <script src="js/00-tailwind-config.js"></script>
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/premium.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
+</head>
+<body class="min-h-screen font-sans">
+  <div id="splash" aria-hidden="true">
+    <div class="ring"><img src="img/logo.png" alt="" /></div>
+    <div class="word">Los Araganes</div>
+  </div>
+  <div id="scroll-progress" aria-hidden="true"></div>
+  <button type="button" id="to-top" aria-label="Volver arriba" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+  </button>
+
+  <!-- ========== LOGIN ========== -->
+  <div id="login-screen" class="min-h-screen flex items-center justify-center px-4">
+    <div class="card login-card p-8 w-full max-w-[400px] space-y-6">
+      <div class="text-center">
+        <img src="img/logo.png" alt="Los Araganes" class="logo-img w-20 h-20 mx-auto mb-4" />
+        <h1 class="text-lg font-semibold tracking-tight text-white">Los Araganes</h1>
+        <p class="text-[13px] text-[var(--text-muted)] mt-1">Control de sueldos</p>
+      </div>
+      <div>
+        <label class="block mb-1.5" for="login-usuario">Correo electrónico</label>
+        <input type="email" id="login-usuario" class="w-full rounded-lg px-3 py-2.5" placeholder="correo@empresa.com" autocomplete="username" />
+      </div>
+      <div>
+        <label class="block mb-1.5" for="login-password">Contraseña</label>
+        <input type="password" id="login-password" class="w-full rounded-lg px-3 py-2.5" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <button type="button" onclick="hacerLogin()" id="btn-login" class="btn-yellow w-full py-3 rounded-lg text-sm">
+        Iniciar sesión
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== APP (oculta hasta login) ========== -->
+  <div id="app-screen" class="hidden">
+
+    <!-- HEADER -->
+    <header class="sticky top-0 z-50">
+      <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div class="flex items-center gap-2 sm:gap-3">
+          <button type="button" class="menu-btn-trigger" onclick="abrirDrawer()" aria-label="Menú de secciones" title="Menú">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
+          <img src="img/logo.png" alt="LA" class="logo-img w-11 h-11" />
+          <div>
+            <h1 class="text-xl font-bold text-aragan-yellow">Los Araganes</h1>
+            <p class="text-xs text-gray-400 brand-subtitle">Control de Sueldos</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <div id="user-badge" class="user-chip text-xs"></div>
+          <div id="status" class="text-[11px] text-[var(--text-dim)] hidden sm:block tabular-nums">Cargando...</div>
+          <button type="button" onclick="cerrarSesion()" class="text-xs text-[var(--text-muted)] hover:text-white border border-[var(--border)] rounded-lg px-2.5 py-1.5 transition hover:border-[var(--border-hover)]">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- NAV TABS (desktop) -->
+    <nav class="max-w-5xl mx-auto px-4 top-nav-desktop">
+      <div class="flex gap-1 overflow-x-auto border-b border-gray-700">
+        <button type="button" onclick="showTab('dashboard')" id="tab-dashboard" class="tab-btn admin-only px-4 py-3 tab-active whitespace-nowrap">Dashboard</button>
+        <button type="button" onclick="showTab('nuevo')" id="tab-nuevo" class="tab-btn px-4 py-3 whitespace-nowrap">Movimiento</button>
+        <button type="button" onclick="showTab('historial')" id="tab-historial" class="tab-btn px-4 py-3 whitespace-nowrap">Historial</button>
+        <button type="button" onclick="showTab('individual')" id="tab-individual" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Desglose</button>
+        <button type="button" onclick="showTab('ahorros')" id="tab-ahorros" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorros</button>
+        <button type="button" onclick="showTab('ahorroespecial')" id="tab-ahorroespecial" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorro esp.</button>
+        <button type="button" onclick="showTab('gastosnegocio')" id="tab-gastosnegocio" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Gastos neg.</button>
+        <button type="button" onclick="showTab('ingresosnegocio')" id="tab-ingresosnegocio" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ingresos</button>
+        <button type="button" onclick="showTab('prestamos')" id="tab-prestamos" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Préstamos</button>
+        <button type="button" onclick="showTab('empleados')" id="tab-empleados" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Empleados</button>
+        <button type="button" onclick="showTab('usuarios')" id="tab-usuarios" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Usuarios</button>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main class="max-w-5xl mx-auto px-4 py-7 sm:py-8">
+
+      <!-- ========== DASHBOARD (solo admin) ========== -->
+      <section id="view-dashboard" class="space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 class="page-title">Dashboard</h2>
+          <div class="flex items-center gap-2">
+            <button type="button" onclick="abrirPagarSueldos()" class="admin-only btn-yellow px-3.5 py-2 rounded-lg text-[13px]">Pagar sueldos</button>
+            <button type="button" onclick="copiarDesgloseWhatsApp()" class="admin-only btn-yellow px-3.5 py-2 rounded-lg text-[13px]">Copiar desglose</button>
+            <div class="relative">
+              <button type="button" onclick="toggleMenu('dashboard-menu', event)" class="admin-only w-9 h-9 flex items-center justify-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)] text-lg leading-none" title="Más opciones">···</button>
+              <div id="dashboard-menu" class="dropdown-menu hidden absolute right-0 mt-2 w-72 max-w-[calc(100vw-24px)] z-20 overflow-hidden py-1 shadow-2xl">
+                <div class="px-3 py-2 text-[11px] uppercase tracking-wider text-gray-500 font-medium">Opciones</div>
+                <button type="button" onclick="testAuditoria(); toggleMenu('dashboard-menu')" class="w-full text-left px-4 py-2.5 text-sm text-[#6eb8d8] hover:bg-[rgba(74,155,191,0.1)] whitespace-normal break-words leading-snug">
+                  Probar auditoría
+                </button>
+                <button type="button" onclick="confirmarBorrarSemana()" class="w-full text-left px-4 py-2.5 text-sm text-[#e08888]/90 hover:bg-[rgba(196,84,84,0.1)] whitespace-normal break-words leading-snug">
+                  Borrar semana actual
+                </button>
+                <div class="border-t border-[#2a2a2a] my-1"></div>
+                <button type="button" onclick="cargarTodo(true); toggleMenu('dashboard-menu')" class="w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:bg-[#2a2a2a] hover:text-white whitespace-normal break-words leading-snug">
+                  Actualizar datos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="week-picker">
+          <button type="button" onclick="cambiarSemana(-1)" class="week-nav-btn text-lg" title="Semana anterior">‹</button>
+          <div class="week-range">
+            <div class="label" id="semana-badge">Semana</div>
+            <div class="dates" id="semana-label">Cargando...</div>
+            <div class="hint" id="semana-hint">Cierra el miércoles</div>
+          </div>
+          <button type="button" onclick="cambiarSemana(1)" class="week-nav-btn text-lg" title="Semana siguiente">›</button>
+          <button type="button" onclick="irSemanaActual()" class="btn-outline px-3 py-2 rounded-lg text-xs font-medium whitespace-nowrap">Ir a hoy</button>
+        </div>
+        <div id="dashboard-week-totals" class="stagger-list grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
+        <div id="dashboard-summary" class="stagger-list grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3"></div>
+        <div id="dashboard-cards" class="stagger-list grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <div id="dashboard-empty" class="hidden empty-state">
+          <div class="empty-icon">—</div>
+          <p class="font-medium text-gray-400">No hay empleados</p>
+          <button type="button" onclick="showTab('empleados')" class="btn-yellow mt-4 px-4 py-2 rounded-lg text-sm font-medium admin-only">+ Agregar empleado</button>
+        </div>
+      </section>
+
+      <!-- ========== NUEVO MOVIMIENTO ========== -->
+            <section id="view-nuevo" class="hidden space-y-5">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="page-title">Nuevo movimiento</h2>
+        </div>
+
+        <div class="card p-5 sm:p-6 space-y-6">
+
+          <!-- Fecha + Tipo en fila en desktop -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div class="form-section">
+              <div class="form-section-label">
+                <span class="title">Fecha</span>
+              </div>
+              <input type="date" id="mov-fecha" class="w-full rounded-lg px-3 py-2.5" />
+            </div>
+            <div class="form-section">
+              <div class="form-section-label">
+                <span class="title">Tipo de movimiento</span>
+              </div>
+              <div id="tipos-container" class="grid grid-cols-3 gap-1.5">
+                <button type="button" onclick="setTipo('Bono')" id="tipo-Bono" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Bono</button>
+                <button type="button" onclick="setTipo('Extra')" id="tipo-Extra" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Extra</button>
+                <button type="button" onclick="setTipo('Adelanto')" id="tipo-Adelanto" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Adelanto</button>
+                <button type="button" onclick="setTipo('Gasto')" id="tipo-Gasto" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Gasto</button>
+                <button type="button" onclick="setTipo('Ingreso')" id="tipo-Ingreso" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Ingreso</button>
+                <button type="button" onclick="setTipo('Ahorro')" id="tipo-Ahorro" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Ahorro</button>
+                <button type="button" onclick="setTipo('AhorroEspecial')" id="tipo-AhorroEspecial" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[12px] leading-tight">Ahorro esp.</button>
+                <button type="button" onclick="setTipo('Fiado')" id="tipo-Fiado" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Fiado 🍔</button>
+                <button type="button" onclick="setTipo('Penalizacion')" id="tipo-Penalizacion" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[12px] leading-tight">Penalización ⚠️</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Modo monto -->
+          <div id="modo-monto-box" class="form-section">
+            <div class="form-section-label">
+              <span class="title">Cómo aplicar el monto</span>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <button type="button" onclick="setModoMonto('individual')" id="modo-individual" class="modo-btn py-3 rounded-lg text-[13px]">
+                Individual
+                <span class="block text-[11px] opacity-60 mt-0.5 font-normal">Mismo monto a cada uno</span>
+              </button>
+              <button type="button" onclick="setModoMonto('grupal')" id="modo-grupal" class="modo-btn py-3 rounded-lg text-[13px]">
+                Grupal
+                <span class="block text-[11px] opacity-60 mt-0.5 font-normal">Total dividido entre todos</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empleados (bloqueado en Gasto del negocio) -->
+          <div id="emp-section" class="form-section">
+            <div class="form-section-label">
+              <span class="title">Empleados <span id="contador-seleccionados" class="text-aragan-yellow font-semibold ml-1">0 de 0</span></span>
+              <div class="actions" id="emp-actions">
+                <button type="button" onclick="seleccionarEmpleados(true)">Todos</button>
+                <span class="sep">|</span>
+                <button type="button" class="muted" onclick="seleccionarEmpleados(false)">Ninguno</button>
+              </div>
+            </div>
+            <div id="emp-lock-wrap" class="emp-lock-wrap">
+              <div id="emp-lock-overlay" class="emp-lock-overlay hidden" onclick="avisarEmpleadosBloqueados()">
+                <div class="emp-lock-msg">
+                  <span class="emp-lock-icon">🔒</span>
+                  <span class="emp-lock-title">No aplica a empleados</span>
+                </div>
+              </div>
+              <input type="search" id="emp-search" class="emp-search" placeholder="Buscar empleado..." autocomplete="off" oninput="filtrarEmpleados(this.value)" />
+              <div id="empleados-checkboxes" class="emp-grid scrollbar"></div>
+              <div id="selection-summary" class="selection-summary hidden">
+                <span class="count"><strong id="sel-count">0</strong> seleccionados</span>
+                <span class="preview" id="sel-preview"></span>
+              </div>
+            </div>
+          </div>
+
+          <div id="gasto-negocio-box" class="form-section hidden">
+            <div class="rounded-lg border border-[rgba(196,84,84,0.35)] bg-[rgba(196,84,84,0.08)] px-4 py-3 text-sm">
+              <span class="font-semibold text-[#e08888]">Gasto del negocio</span>
+              <span class="block mt-1 text-[13px] text-[var(--text-muted)]">No descuenta sueldos.</span>
+            </div>
+          </div>
+
+          <!-- Monto -->
+          <div class="form-section">
+            <div class="form-section-label">
+              <span class="title" id="label-monto">Monto por persona</span>
+            </div>
+            <div class="amount-wrap">
+              <span class="currency">$</span>
+              <input type="number" id="mov-monto" step="0.01" min="0" placeholder="0.00" class="w-full rounded-lg py-3" oninput="actualizarMontoDividido()" />
+            </div>
+            <div class="flex flex-wrap gap-1.5 mt-2.5">
+              <button type="button" onclick="setMontoRapido(50)" class="chip-monto">$50</button>
+              <button type="button" onclick="setMontoRapido(100)" class="chip-monto">$100</button>
+              <button type="button" onclick="setMontoRapido(200)" class="chip-monto">$200</button>
+              <button type="button" onclick="setMontoRapido(250)" class="chip-monto">$250</button>
+              <button type="button" onclick="setMontoRapido(500)" class="chip-monto">$500</button>
+              <button type="button" onclick="setMontoRapido(1000)" class="chip-monto">$1,000</button>
+            </div>
+            <p class="monto-hint" id="monto-dividido"></p>
+          </div>
+
+          <!-- Método de pago (Adelanto / Gasto / Ingreso) -->
+          <div id="metodo-pago-box" class="form-section hidden">
+            <div class="form-section-label">
+              <span class="title">Método de pago <span class="text-[#e08888]">*</span></span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="setMetodoPago('Caja')" id="metodo-Caja" class="modo-btn py-2.5 rounded-lg text-[13px]">Caja</button>
+              <button type="button" onclick="setMetodoPago('Tarjeta')" id="metodo-Tarjeta" class="modo-btn py-2.5 rounded-lg text-[13px]">Tarjeta</button>
+              <button type="button" onclick="setMetodoPago('Transferencia')" id="metodo-Transferencia" class="modo-btn py-2.5 rounded-lg text-[13px]">Transferencia</button>
+            </div>
+          </div>
+
+          <!-- Nota -->
+          <div class="form-section">
+            <div class="form-section-label">
+              <span class="title">Motivo / nota <span class="text-[#e08888]">*</span></span>
+            </div>
+            <textarea id="mov-notas" rows="2" placeholder="Motivo" class="w-full rounded-lg px-3 py-2.5"></textarea>
+          </div>
+
+          <button type="button" onclick="guardarMovimiento()" id="btn-guardar-mov" class="btn-yellow w-full py-3 rounded-lg text-sm">
+            Registrar movimiento
+          </button>
+        </div>
+      </section>
+
+<!-- ========== HISTORIAL ========== -->
+      <section id="view-historial" class="hidden space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 class="page-title">Historial</h2>
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <button type="button" onclick="toggleMenu('historial-menu', event)" class="admin-only w-9 h-9 flex items-center justify-center rounded-lg bg-[var(--bg-elevated)] border border-[var(--border)] text-[var(--text-muted)] hover:text-white hover:border-[var(--border-hover)] text-lg leading-none" title="Más opciones">···</button>
+              <div id="historial-menu" class="dropdown-menu hidden absolute right-0 mt-2 w-72 max-w-[calc(100vw-24px)] z-20 overflow-hidden py-1 shadow-2xl">
+                <div class="px-3 py-2 text-[11px] uppercase tracking-wider text-gray-500">Zona peligrosa</div>
+                <button type="button" onclick="confirmarBorrarTodo(); toggleMenu('historial-menu')" class="w-full text-left px-4 py-2.5 text-sm text-[#e08888] hover:bg-[rgba(196,84,84,0.1)] flex items-center gap-2">
+                  <span>⚠️</span> Borrar TODO el historial
+                </button>
+                <div class="border-t border-[#2a2a2a] my-1"></div>
+                <button type="button" onclick="cargarTodo(true); toggleMenu('historial-menu')" class="w-full text-left px-4 py-2.5 text-sm text-gray-400 hover:bg-[#2a2a2a] hover:text-white flex items-center gap-2">
+                  <span>🔄</span> Actualizar lista
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="flex gap-2 flex-wrap">
+          <input type="search" id="filtro-buscar" oninput="renderHistorial()" placeholder="Buscar notas, tipo, monto..." class="rounded-lg px-3 py-2 text-sm flex-1 min-w-[160px]" />
+          <select id="filtro-empleado" onchange="renderHistorial()" class="rounded-lg px-3 py-2 text-sm">
+            <option value="">Todos los empleados</option>
+          </select>
+          <select id="filtro-tipo" onchange="renderHistorial()" class="rounded-lg px-3 py-2 text-sm">
+            <option value="">Todos los tipos</option>
+            <option value="Bono">Bono</option>
+            <option value="Extra">Extra</option>
+            <option value="Adelanto">Adelanto</option>
+            <option value="Gasto">Gasto</option>
+            <option value="Ingreso">Ingreso</option>
+            <option value="Prestamo">Préstamo</option>
+            <option value="CuotaPrestamo">Cuota préstamo</option>
+            <option value="Descuento">Descuento (antiguo)</option>
+            <option value="Penalizacion">Penalización</option>
+            <option value="Ahorro">Ahorro</option>
+            <option value="AhorroEspecial">Ahorro especial</option>
+            <option value="Fiado">Fiado 🍔</option>
+          </select>
+        </div>
+
+        <div class="card p-4 flex flex-col sm:flex-row sm:items-end gap-3 flex-wrap admin-only">
+          <div class="flex-1 min-w-[160px]">
+            <label class="block text-[11px] uppercase tracking-wide text-gray-500 mb-1.5 font-semibold">Copiar un día</label>
+            <input type="date" id="filtro-dia-copiar" class="w-full rounded-lg px-3 py-2 text-sm" onchange="renderHistorial()" />
+          </div>
+          <button type="button" onclick="copiarMovimientosDelDia()" class="btn-yellow px-4 py-2.5 rounded-lg text-sm whitespace-nowrap">
+            Copiar
+          </button>
+          <button type="button" onclick="copiarResumenTotalesDelDia()" class="btn-outline px-4 py-2.5 rounded-lg text-sm whitespace-nowrap">
+            Solo totales
+          </button>
+          <button type="button" onclick="limpiarFiltroDia()" class="btn-ghost px-3 py-2.5 rounded-lg text-sm whitespace-nowrap">
+            Quitar filtro
+          </button>
+          <p id="filtro-dia-hint" class="text-xs text-gray-500 w-full sm:w-auto sm:flex-1"></p>
+        </div>
+
+        <div id="historial-lista" class="stagger-list space-y-3"></div>
+        <div id="historial-empty" class="hidden empty-state">
+          <div class="empty-icon">—</div>
+          <p class="font-medium text-gray-400">No hay movimientos</p>
+          <button type="button" onclick="showTab('nuevo')" class="btn-yellow mt-4 px-4 py-2 rounded-lg text-sm font-medium">+ Nuevo movimiento</button>
+        </div>
+      </section>
+
+      <!-- ========== DESGLOSE INDIVIDUAL ========== -->
+      <section id="view-individual" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="page-title">Desglose individual</h2>
+          </div>
+        </div>
+        <div class="card rounded-xl p-5 space-y-4">
+          <div class="grid sm:grid-cols-[1fr_auto] gap-3 items-end">
+            <div>
+              <label class="block text-sm font-medium text-gray-300 mb-1">Empleado</label>
+              <select id="ind-empleado" class="w-full rounded-lg px-3 py-2.5"></select>
+            </div>
+            <div class="flex gap-2">
+              <button type="button" onclick="verDesgloseIndividual()" class="btn-yellow px-5 py-2.5 rounded-xl font-bold">Ver desglose</button>
+              <button type="button" onclick="compartirWhatsAppIndividual()" class="btn-outline px-4 py-2.5 rounded-xl text-sm">WhatsApp</button>
+              <button type="button" onclick="imprimirDesgloseIndividual()" class="btn-outline px-4 py-2.5 rounded-xl text-sm">Imprimir</button>
+            </div>
+          </div>
+          <p class="text-xs text-gray-500">Semana del Dashboard.</p>
+        </div>
+        <div id="ind-resultado" class="stagger-list"></div>
+        <div id="ind-empty" class="empty-state">
+          <div class="empty-icon">👤</div>
+          <p class="font-medium text-gray-400">Elige empleado y pulsa Ver desglose</p>
+        </div>
+      </section>
+
+      <!-- ========== AHORROS (solo admin) ========== -->
+      <section id="view-ahorros" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="page-title">Ahorros</h2>
+            <p class="text-sm text-gray-400">Acumulado por persona</p>
+          </div>
+          <button type="button" onclick="cargarTodo(true)" class="btn-outline px-4 py-2 rounded-lg text-sm font-medium">Actualizar</button>
+        </div>
+
+        <div class="card p-4 space-y-4 border border-[rgba(74,155,191,0.35)]">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div class="min-w-0">
+              <h3 class="text-sm font-semibold text-[#6eb8d8]">Ahorro semanal</h3>
+              <p class="text-[12.5px] text-gray-400 mt-1">Se descuenta del sueldo de la semana del Dashboard.</p>
+            </div>
+            <button type="button" id="btn-ahorro-semanal" onclick="aplicarAhorroSemanal()" class="btn-yellow px-4 py-2.5 rounded-lg text-sm shrink-0 whitespace-nowrap">
+              Hacer ahorro
+            </button>
+          </div>
+          <div class="flex flex-wrap items-end gap-3">
+            <div class="w-36">
+              <label class="block text-xs text-gray-500 mb-1">Monto por persona</label>
+              <div class="amount-wrap">
+                <span class="currency">$</span>
+                <input type="number" id="ahorro-semanal-monto" step="0.01" min="0" value="250" class="w-full rounded-lg py-2.5 text-sm" />
+              </div>
+            </div>
+            <div class="flex gap-2 text-xs">
+              <button type="button" class="btn-ghost px-2.5 py-1.5 rounded-md" onclick="seleccionarAhorroSemanal(true)">Todos</button>
+              <button type="button" class="btn-ghost px-2.5 py-1.5 rounded-md" onclick="seleccionarAhorroSemanal(false)">Ninguno</button>
+            </div>
+          </div>
+          <div id="ahorro-semanal-lista" class="grid grid-cols-2 sm:grid-cols-3 gap-2 max-h-56 overflow-y-auto scrollbar"></div>
+          <div id="ahorro-semanal-hint" class="text-xs text-gray-500"></div>
+        </div>
+
+        <div id="ahorros-cards" class="stagger-list grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <div id="ahorros-empty" class="hidden empty-state">
+          <div class="empty-icon">—</div>
+          <p class="font-medium text-gray-400">Sin ahorros todavía</p>
+        </div>
+      </section>
+
+      <!-- ========== AHORRO ESPECIAL (solo admin) ========== -->
+      <section id="view-ahorroespecial" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-2xl font-bold text-[#b8a0d0]">Ahorro especial</h2>
+            <p class="text-sm text-gray-400">Separado del ahorro normal</p>
+          </div>
+          <button type="button" onclick="cargarTodo(true)" class="btn-outline px-4 py-2 rounded-lg text-sm font-medium">Actualizar</button>
+        </div>
+        <div id="ahorroespecial-cards" class="stagger-list grid gap-4 sm:grid-cols-2 lg:grid-cols-3"></div>
+        <div id="ahorroespecial-empty" class="hidden empty-state">
+          <div class="empty-icon">💜</div>
+          <p class="font-medium text-gray-400">Sin ahorro especial todavía</p>
+          <button type="button" onclick="showTab('nuevo')" class="btn-yellow mt-4 px-4 py-2 rounded-lg text-sm font-medium">+ Registrar</button>
+        </div>
+      </section>
+
+      <!-- ========== GASTOS DEL NEGOCIO (solo admin ve; empleados sí pueden registrar) ========== -->
+      <section id="view-gastosnegocio" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="page-title">Gastos del negocio</h2>
+            <p class="text-sm text-gray-400 mt-0.5">No descuentan sueldos.</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="showTab('nuevo'); setTipo('Gasto');" class="btn-yellow px-3.5 py-2 rounded-lg text-[13px]">+ Registrar gasto</button>
+            <button type="button" onclick="cargarTodo(true)" class="btn-outline px-3.5 py-2 rounded-lg text-[13px]">Actualizar</button>
+          </div>
+        </div>
+        <div id="gastos-negocio-summary" class="stagger-list grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+        <div id="gastos-negocio-lista" class="stagger-list space-y-2"></div>
+        <div id="gastos-negocio-empty" class="hidden empty-state">
+          <div class="empty-icon">📉</div>
+          <p class="font-medium text-gray-400">Sin gastos del negocio</p>
+          <button type="button" onclick="showTab('nuevo'); setTipo('Gasto');" class="btn-yellow mt-4 px-4 py-2 rounded-lg text-sm font-medium">+ Registrar gasto</button>
+        </div>
+      </section>
+
+
+      <!-- ========== INGRESOS DEL NEGOCIO (solo admin) ========== -->
+      <section id="view-ingresosnegocio" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="page-title">Ingresos del negocio</h2>
+            <p class="text-sm text-gray-400 mt-0.5">No afectan sueldos.</p>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="showTab('nuevo'); setTipo('Ingreso');" class="btn-yellow px-3.5 py-2 rounded-lg text-[13px]">+ Registrar ingreso</button>
+            <button type="button" onclick="cargarTodo(true)" class="btn-outline px-3.5 py-2 rounded-lg text-[13px]">Actualizar</button>
+          </div>
+        </div>
+        <div id="ingresos-negocio-summary" class="stagger-list grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+        <div id="ingresos-negocio-lista" class="stagger-list space-y-2"></div>
+        <div id="ingresos-negocio-empty" class="hidden empty-state">
+          <div class="empty-icon">📈</div>
+          <p class="font-medium text-gray-400">Sin ingresos del negocio</p>
+        </div>
+      </section>
+
+      <!-- ========== PRÉSTAMOS (solo admin) ========== -->
+      <section id="view-prestamos" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="page-title">Préstamos</h2>
+            <p class="text-sm text-gray-400 mt-0.5">Las cuotas se aplican manualmente.</p>
+          </div>
+          <button type="button" onclick="cargarTodo(true)" class="btn-outline px-3.5 py-2 rounded-lg text-[13px]">Actualizar</button>
+        </div>
+
+        <div class="card p-5 space-y-4">
+          <h3 class="text-sm font-semibold text-aragan-yellow">Nuevo préstamo</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Empleado</label>
+              <select id="prestamo-empleado" class="w-full rounded-lg px-3 py-2.5 text-sm"></select>
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Monto total del préstamo</label>
+              <input type="number" id="prestamo-monto" step="0.01" min="0" placeholder="0.00" class="w-full rounded-lg px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Cuota semanal</label>
+              <input type="number" id="prestamo-cuota" step="0.01" min="0" placeholder="500" value="500" class="w-full rounded-lg px-3 py-2.5 text-sm" />
+            </div>
+            <div>
+              <label class="block text-xs text-gray-500 mb-1">Fecha</label>
+              <input type="date" id="prestamo-fecha" class="w-full rounded-lg px-3 py-2.5 text-sm" />
+            </div>
+            <div class="sm:col-span-2">
+              <label class="block text-xs text-gray-500 mb-1">Nota / motivo</label>
+              <input type="text" id="prestamo-notas" placeholder="Ej. préstamo personal" class="w-full rounded-lg px-3 py-2.5 text-sm" />
+            </div>
+          </div>
+          <button type="button" id="btn-guardar-prestamo" onclick="guardarPrestamo()" class="btn-yellow px-4 py-2.5 rounded-lg text-sm">Registrar préstamo</button>
+        </div>
+
+        <div>
+          <h3 class="text-sm font-semibold text-white mb-3">Préstamos en curso</h3>
+
+          <div id="prestamos-bulk-box" class="card p-4 mb-4 space-y-3 border border-[rgba(201,162,39,0.35)]">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+              <div class="min-w-0">
+                <h4 class="text-sm font-semibold text-aragan-yellow">Descontar cuota a todos</h4>
+                <p class="text-[12.5px] text-gray-400 mt-1">Marca «Excluir» para omitir a alguien.</p>
+              </div>
+              <button type="button" id="btn-bulk-cuotas" onclick="aplicarCuotasMasivas()" class="btn-yellow px-4 py-2.5 rounded-lg text-sm shrink-0 whitespace-nowrap">
+                Descontar a todos
+              </button>
+            </div>
+            <div id="prestamos-bulk-hint" class="text-xs text-gray-500"></div>
+          </div>
+
+          <div id="prestamos-lista" class="stagger-list space-y-3"></div>
+          <div id="prestamos-empty" class="hidden empty-state">
+            <div class="empty-icon">💳</div>
+            <p class="font-medium text-gray-400">Nadie tiene préstamo pendiente</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ========== EMPLEADOS (solo admin) ========== -->
+
+      <section id="view-empleados" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <h2 class="page-title">Empleados</h2>
+            <span id="contador-total-empleados" class="bg-aragan-yellow/10 text-aragan-yellow text-xs font-bold px-2.5 py-1 rounded-full border border-aragan-yellow/20">0 en total</span>
+          </div>
+          <button type="button" onclick="mostrarFormEmpleado()" class="btn-yellow px-4 py-2 rounded-lg text-sm font-medium">+ Agregar</button>
+        </div>
+        <div id="form-empleado" class="hidden card rounded-xl p-5 space-y-4">
+          <h3 id="form-empleado-titulo" class="font-bold text-lg">Nuevo empleado</h3>
+          <input type="hidden" id="emp-original" />
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Nombre</label>
+            <input type="text" id="emp-nombre" class="w-full rounded-lg px-3 py-2.5" placeholder="Nombre del empleado" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Sueldo Base ($)</label>
+            <input type="number" id="emp-sueldo" step="0.01" min="0" class="w-full rounded-lg px-3 py-2.5" placeholder="0.00" />
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="guardarEmpleado()" id="btn-guardar-emp" class="btn-yellow flex-1 py-2.5 rounded-lg font-medium">Guardar</button>
+            <button type="button" onclick="ocultarFormEmpleado()" class="flex-1 py-2.5 rounded-lg border border-gray-600 text-gray-300">Cancelar</button>
+          </div>
+        </div>
+        <div id="empleados-lista" class="stagger-list space-y-3"></div>
+      </section>
+
+      <!-- ========== USUARIOS (solo admin) ========== -->
+      <section id="view-usuarios" class="hidden space-y-6 admin-only">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <h2 class="page-title">Usuarios</h2>
+          <p class="text-xs text-gray-500">Altas en Supabase → Authentication</p>
+        </div>
+        <div id="form-usuario" class="hidden card rounded-xl p-5 space-y-4">
+          <h3 class="font-bold text-lg">Nuevo usuario</h3>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Usuario</label>
+            <input type="text" id="usr-nombre" class="w-full rounded-lg px-3 py-2.5" placeholder="nombre" />
+          </div>
+          <div>
+            <label class="block mb-1.5">Contraseña</label>
+            <input type="password" id="usr-password" class="w-full rounded-lg px-3 py-2.5" placeholder="contraseña" autocomplete="new-password" />
+          </div>
+          <div>
+            <label class="block text-sm text-gray-300 mb-1">Rol</label>
+            <select id="usr-rol" class="w-full rounded-lg px-3 py-2.5">
+              <option value="empleado">Empleado (solo adelantos/gastos)</option>
+              <option value="admin">Administrador (todo)</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="guardarUsuario()" id="btn-guardar-usr" class="btn-yellow flex-1 py-2.5 rounded-lg font-medium">Guardar</button>
+            <button type="button" onclick="ocultarFormUsuario()" class="flex-1 py-2.5 rounded-lg border border-gray-600 text-gray-300">Cancelar</button>
+          </div>
+        </div>
+        <div id="usuarios-lista" class="stagger-list space-y-3"></div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- ========== BOTTOM NAV (móvil) ========== -->
+
+  <!-- ========== APP DRAWER (menú de vistas) ========== -->
+  <div id="app-drawer-backdrop" onclick="cerrarDrawer()" aria-hidden="true"></div>
+  <aside id="app-drawer" role="dialog" aria-label="Navegación" aria-modal="true">
+    <div class="drawer-head">
+      <span class="title drawer-brand"><img id="drawer-logo" class="logo-img" alt="" /><span><span class="t1 block">Los Araganes</span><span class="t2 block">Secciones</span></span></span>
+      <button type="button" class="drawer-close" onclick="cerrarDrawer()" aria-label="Cerrar">×</button>
+    </div>
+    <div class="drawer-body scrollbar">
+      <div class="drawer-section admin-only">Resumen</div>
+      <button type="button" class="drawer-item admin-only" data-tab="dashboard" onclick="navegarDrawer('dashboard')">
+        <span class="di-icon">▣</span>
+        <span class="di-label">Dashboard</span>
+      </button>
+      <button type="button" class="drawer-item admin-only" data-tab="individual" onclick="navegarDrawer('individual')">
+        <span class="di-icon">◎</span>
+        <span class="di-label">Desglose</span>
+      </button>
+
+      <div class="drawer-section">Operación</div>
+      <button type="button" class="drawer-item" data-tab="nuevo" onclick="navegarDrawer('nuevo')">
+        <span class="di-icon">＋</span>
+        <span class="di-label">Movimiento</span>
+      </button>
+      <button type="button" class="drawer-item" data-tab="historial" onclick="navegarDrawer('historial')">
+        <span class="di-icon">☰</span>
+        <span class="di-label">Historial</span>
+      </button>
+
+      <div class="drawer-section admin-only">Ahorros</div>
+      <button type="button" class="drawer-item admin-only" data-tab="ahorros" onclick="navegarDrawer('ahorros')">
+        <span class="di-icon">◇</span>
+        <span class="di-label">Ahorros</span>
+      </button>
+      <button type="button" class="drawer-item admin-only" data-tab="ahorroespecial" onclick="navegarDrawer('ahorroespecial')">
+        <span class="di-icon">✦</span>
+        <span class="di-label">Ahorro especial</span>
+      </button>
+      <button type="button" class="drawer-item admin-only" data-tab="gastosnegocio" onclick="navegarDrawer('gastosnegocio')">
+        <span class="di-icon">📉</span>
+        <span class="di-label">Gastos del negocio</span>
+      </button>
+      <button type="button" class="drawer-item admin-only" data-tab="ingresosnegocio" onclick="navegarDrawer('ingresosnegocio')">
+        <span class="di-icon">📈</span>
+        <span class="di-label">Ingresos del negocio</span>
+      </button>
+      <button type="button" class="drawer-item admin-only" data-tab="prestamos" onclick="navegarDrawer('prestamos')">
+        <span class="di-icon">💳</span>
+        <span class="di-label">Préstamos</span>
+      </button>
+
+      <div class="drawer-section admin-only">Administración</div>
+      <button type="button" class="drawer-item admin-only" data-tab="empleados" onclick="navegarDrawer('empleados')">
+        <span class="di-icon">○</span>
+        <span class="di-label">Empleados</span>
+      </button>
+      <button type="button" class="drawer-item admin-only" data-tab="usuarios" onclick="navegarDrawer('usuarios')">
+        <span class="di-icon">◉</span>
+        <span class="di-label">Usuarios</span>
+      </button>
+    </div>
+  </aside>
+
+  <nav id="bottom-nav" class="bottom-nav">
+    <button type="button" class="bottom-nav-btn admin-only" data-tab="dashboard" onclick="showTab('dashboard')">
+      <span class="icon">■</span><span>Inicio</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-tab="nuevo" onclick="showTab('nuevo')">
+      <span class="icon">＋</span><span>Nuevo</span>
+    </button>
+    <button type="button" class="bottom-nav-btn" data-tab="historial" onclick="showTab('historial')">
+      <span class="icon">≡</span><span>Historial</span>
+    </button>
+    <button type="button" class="bottom-nav-btn admin-only" data-tab="individual" onclick="showTab('individual')">
+      <span class="icon">◎</span><span>Desglose</span>
+    </button>
+    <button type="button" class="bottom-nav-btn admin-only" data-tab="ahorros" onclick="showTab('ahorros')">
+      <span class="icon">◇</span><span>Ahorros</span>
+    </button>
+    <button type="button" class="bottom-nav-btn admin-only" data-tab="empleados" onclick="showTab('empleados')">
+      <span class="icon">○</span><span>Equipo</span>
+    </button>
+  </nav>
+
+  <!-- ========== CONFIRM MODAL ========== -->
+  <div id="confirm-overlay" class="fixed inset-0 z-[90] hidden flex items-center justify-center px-4">
+    <div class="confirm-card rounded-xl p-6 w-full max-w-sm space-y-4">
+      <h3 class="text-base font-semibold text-white tracking-tight">Confirmar movimiento</h3>
+      <p id="confirm-text" class="text-sm text-gray-300 leading-relaxed"></p>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarConfirmacion()" class="flex-1 py-2.5 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white hover:border-[#444] transition">Cancelar</button>
+        <button type="button" id="btn-confirm-ok" onclick="confirmarYGuardar()" class="btn-yellow flex-1 py-2.5 rounded-lg">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== EDITAR MOVIMIENTO ========== -->
+  <div id="edit-mov-overlay" class="fixed inset-0 z-[92] hidden flex items-center justify-center px-4" style="background:rgba(0,0,0,0.78);backdrop-filter:blur(10px)">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-2">
+        <h3 class="text-base font-semibold text-white tracking-tight">Editar movimiento</h3>
+        <button type="button" onclick="cerrarEditarMovimiento()" class="text-gray-500 hover:text-white text-lg leading-none px-2">×</button>
+      </div>
+      <p id="edit-mov-hint" class="text-xs text-gray-500"></p>
+      <input type="hidden" id="edit-mov-id" />
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Fecha</label>
+        <input type="date" id="edit-mov-fecha" class="w-full rounded-lg px-3 py-2 text-sm" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Empleado(s)</label>
+        <select id="edit-mov-empleado" class="w-full rounded-lg px-3 py-2 text-sm"></select>
+        <div id="edit-mov-grupo-box" class="hidden mt-2">
+          <div id="edit-mov-grupo-lista" class="grid grid-cols-2 gap-1.5 max-h-40 overflow-y-auto scrollbar"></div>
+          <div class="flex gap-2 mt-1.5 text-xs">
+            <button type="button" class="btn-ghost px-2 py-1 rounded-md" onclick="seleccionarEditGrupo(true)">Todos</button>
+            <button type="button" class="btn-ghost px-2 py-1 rounded-md" onclick="seleccionarEditGrupo(false)">Ninguno</button>
+          </div>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Tipo</label>
+        <select id="edit-mov-tipo" class="w-full rounded-lg px-3 py-2 text-sm" onchange="onEditTipoChange()">
+          <option value="Bono">Bono</option>
+          <option value="Extra">Extra</option>
+          <option value="Adelanto">Adelanto</option>
+          <option value="Gasto">Gasto</option>
+          <option value="Ingreso">Ingreso</option>
+          <option value="Ahorro">Ahorro</option>
+          <option value="AhorroEspecial">Ahorro especial</option>
+          <option value="Prestamo">Préstamo</option>
+          <option value="CuotaPrestamo">Cuota préstamo</option>
+          <option value="Descuento">Descuento</option>
+          <option value="Penalizacion">Penalización</option>
+          <option value="Fiado">Fiado 🍔</option>
+        </select>
+      </div>
+      <div id="edit-mov-modo-box" class="hidden">
+        <label class="block text-xs text-gray-500 mb-1.5">Cómo interpretar el monto</label>
+        <div class="grid grid-cols-2 gap-2">
+          <button type="button" id="edit-modo-total" onclick="setEditModoMonto('total')" class="modo-btn rounded-lg px-3 py-2 text-left border border-[var(--border)]">
+            <span class="block text-[13px] font-medium">Monto total</span>
+            <span class="block text-[11px] opacity-60 mt-0.5 font-normal">Se divide entre los seleccionados</span>
+          </button>
+          <button type="button" id="edit-modo-individual" onclick="setEditModoMonto('individual')" class="modo-btn rounded-lg px-3 py-2 text-left border border-[var(--border)]">
+            <span class="block text-[13px] font-medium">Por persona</span>
+            <span class="block text-[11px] opacity-60 mt-0.5 font-normal">Mismo monto a cada uno</span>
+          </button>
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1" id="edit-mov-monto-label">Monto</label>
+        <input type="number" id="edit-mov-monto" step="0.01" min="0" class="w-full rounded-lg px-3 py-2 text-sm" oninput="actualizarEditMontoHint()" />
+        <p id="edit-mov-monto-hint" class="text-[12px] text-aragan-yellow mt-1.5 font-medium min-h-[18px]"></p>
+      </div>
+      <div id="edit-mov-metodo-box" class="hidden">
+        <label class="block text-xs text-gray-500 mb-1">Método de pago</label>
+        <select id="edit-mov-metodo" class="w-full rounded-lg px-3 py-2 text-sm">
+          <option value="">—</option>
+          <option value="Caja">Caja</option>
+          <option value="Tarjeta">Tarjeta</option>
+          <option value="Transferencia">Transferencia</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Motivo / nota</label>
+        <textarea id="edit-mov-notas" rows="2" class="w-full rounded-lg px-3 py-2 text-sm"></textarea>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarEditarMovimiento()" class="flex-1 py-2.5 rounded-lg border border-[#2a2a2a] text-gray-400 hover:text-white transition">Cancelar</button>
+        <button type="button" id="btn-guardar-edit-mov" onclick="guardarEdicionMovimiento()" class="btn-yellow flex-1 py-2.5 rounded-lg">Guardar cambios</button>
+      </div>
+    </div>
+  </div>
+
+  </div>
+
+  <!-- ========== PAGAR SUELDOS / PREVIEW ========== -->
+  <div id="sueldo-modal-overlay" class="fixed inset-0 z-[93] hidden flex items-center justify-center px-4" style="background:rgba(0,0,0,0.78);backdrop-filter:blur(10px)" onclick="if(event.target===this) cerrarSueldoModal()">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-2">
+        <h3 id="sueldo-modal-title" class="text-base font-semibold text-white tracking-tight">Sueldos</h3>
+        <button type="button" onclick="cerrarSueldoModal()" class="text-gray-500 hover:text-white text-lg leading-none px-2">×</button>
+      </div>
+      <div id="sueldo-modal-body" class="space-y-3 text-sm"></div>
+      <div id="sueldo-modal-footer" class="flex gap-2 pt-1"></div>
+    </div>
+  </div>
+
+  <!-- ========== DETALLE MOVIMIENTO (historial) ========== -->
+  <div id="mov-detail-overlay" class="fixed inset-0 z-[93] hidden flex items-center justify-center px-4" style="background:rgba(0,0,0,0.78);backdrop-filter:blur(10px)" onclick="if(event.target===this) cerrarDetalleMovimiento()">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-3 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between gap-2">
+        <h3 id="mov-detail-title" class="text-base font-semibold text-white tracking-tight">Movimiento</h3>
+        <button type="button" onclick="cerrarDetalleMovimiento()" class="text-gray-500 hover:text-white text-lg leading-none px-2">×</button>
+      </div>
+      <div id="mov-detail-body" class="space-y-1 text-sm"></div>
+      <div id="mov-detail-footer" class="flex flex-wrap gap-2 pt-2"></div>
+    </div>
+  </div>
+
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- ========== LOCK OVERLAY (inactividad) ========== -->
+  <div id="lock-overlay" class="fixed inset-0 z-[100] hidden flex items-center justify-center px-4">
+    <div class="lock-card rounded-xl p-8 w-full max-w-sm space-y-5 text-center">
+      <div class="w-14 h-14 rounded-full bg-[rgba(212,175,55,0.12)] flex items-center justify-center mx-auto">
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-aragan-yellow" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+      </div>
+      <div>
+        <h2 class="text-lg font-semibold text-white tracking-tight">Sesión bloqueada</h2>
+        <p class="text-sm text-gray-400 mt-1" id="lock-subtitle">Introduce tu contraseña para continuar</p>
+      </div>
+      <div class="text-left">
+        <input type="password" id="lock-password" class="w-full rounded-lg px-3 py-2.5" placeholder="Contraseña del perfil" autocomplete="current-password" />
+      </div>
+      <button type="button" onclick="desbloquearSesion()" id="btn-unlock" class="btn-unlock w-full py-3 rounded-xl font-bold text-lg">
+        Desbloquear
+      </button>
+      <button type="button" onclick="cambiarPerfil()" class="text-sm text-gray-400 hover:text-white underline">
+        Cambiar de perfil
+      </button>
+      <p id="lock-error" class="text-sm text-[#e08888] hidden"></p>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl font-medium shadow-lg hidden z-50 transition-all"></div>
+
+  <script src="js/01-config-supabase.js"></script>
+  <script src="js/02-utilidades-calculos.js"></script>
+  <script src="js/03-datos-sesion.js"></script>
+  <script src="js/04-inicio-navegacion.js"></script>
+  <script src="js/05-dashboard-sueldos.js"></script>
+  <script src="js/06-desglose-ahorros.js"></script>
+  <script src="js/07-movimientos.js"></script>
+  <script src="js/08-negocio-prestamos.js"></script>
+  <script src="js/09-historial.js"></script>
+  <script src="js/10-empleados-usuarios.js"></script>
+  <script src="js/11-arranque.js"></script>
+  <script src="js/12-interfaz-premium.js"></script>
+</body>
+</html>
