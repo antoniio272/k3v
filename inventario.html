@@ -187,6 +187,27 @@ input.qty-val::-webkit-outer-spin-button,input.qty-val::-webkit-inner-spin-butto
 #reab-list .card:active{transform:none;background:var(--surface)}
 #admin-users .card{border:1px solid var(--border2);border-radius:14px;margin-bottom:8px;cursor:default}
 #admin-users .card:active{transform:none;background:var(--surface)}
+.mv-chev{color:var(--text3);font-size:1.3rem;line-height:1;transition:transform .2s var(--ease)}
+.mv-prod.open{background:var(--surface2)}
+.mv-prod.open .mv-chev{transform:rotate(90deg)}
+.mv-res{background:var(--surface2);border-bottom:1px solid var(--border2);padding:2px 0 4px}
+.mv-row{display:flex;align-items:center;gap:10px;padding:7px 14px;font-size:13px}
+.mv-dia{color:var(--text2)}
+.mv-tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px;min-width:64px;text-align:center;flex:none}
+.mv-compra{background:var(--green-bg);color:var(--green)}.mv-salida{background:var(--red-bg);color:var(--red)}.mv-ajuste{background:var(--blue-bg);color:var(--blue)}.mv-edicion{background:var(--purple-bg);color:var(--purple)}
+.mv-q{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+.mv-campo{font-weight:500;font-size:12px;color:var(--text2)}
+.mv-mas{padding:8px 14px 6px;text-align:center}
+.mv-mas .btn{width:auto;padding:9px 16px;font-size:.85rem}
+.mv-head{background:var(--surface);border:1px solid var(--border2);border-radius:16px;box-shadow:var(--shadow);padding:14px;margin-bottom:12px;display:flex;align-items:flex-start;gap:10px}
+.mv-head .info{flex:1;min-width:0}.mv-head .nombre{font-size:1.1rem;font-weight:700;letter-spacing:-.01em}.mv-head .sub{font-size:12.5px;color:var(--text2);margin-top:3px}
+.mv-x{flex:none;width:36px;height:36px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:15px;cursor:pointer;transition:transform .15s var(--ease)}
+.mv-x:active{transform:scale(.9)}
+.mv-dia-head{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:14px 2px 6px}
+.mv-card{background:var(--surface);border:1px solid var(--border2);border-radius:14px;padding:11px 13px;margin-bottom:8px;box-shadow:var(--shadow)}
+.mv-l1{display:flex;align-items:center;gap:8px}
+.mv-l2{font-size:12.5px;color:var(--text2);margin-top:6px;line-height:1.55}.mv-l2 b{color:var(--text)}
+.mv-mail{color:var(--text3);font-size:11.5px}
 @keyframes rise{from{opacity:0;transform:translateY(8px)}}
 @keyframes view-in{from{opacity:0;transform:translateY(10px)}}
 @keyframes pop-in{from{opacity:0;transform:translateY(-4px) scale(.98)}}
@@ -318,6 +339,14 @@ input.qty-val::-webkit-outer-spin-button,input.qty-val::-webkit-inner-spin-butto
         <th>Producto</th><th>Antes→Ahora</th><th>Dif.</th><th>Motivo</th><th>Usuario</th><th>Fecha</th>
       </tr></thead><tbody></tbody></table></div>
     </section>
+    <section id="view-movimientos" class="hidden">
+      <div id="mov-lista-wrap">
+        <div class="search-bar"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input type="search" id="mov-search" placeholder="Buscar producto..." autocomplete="off"></div>
+        <nav class="tabs" id="mov-tabs"></nav>
+        <div id="mov-lista"></div>
+      </div>
+      <div id="mov-detalle" class="hidden"></div>
+    </section>
     <section id="view-cambios" class="hidden">
       <div style="font-size:.8rem;color:var(--text2);margin:4px 0 10px">Cada cambio al editar o crear un producto queda aquí: qué cambió, cómo estaba antes, cómo quedó, quién y cuándo.</div>
       <div style="overflow-x:auto"><table id="tabla-cambios"><thead><tr>
@@ -347,6 +376,7 @@ input.qty-val::-webkit-outer-spin-button,input.qty-val::-webkit-inner-spin-butto
     <button data-view="historial"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M7 17 17 7M9 7h8v8"/></svg></span>Salidas</button>
     <button data-view="compras"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M17 7 7 17M15 17H7V9"/></svg></span>Compras</button>
     <button data-view="ajustes"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></svg></span>Ajustes</button>
+    <button data-view="movimientos"><span class="ic"><svg class="i" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg></span>Movimientos</button>
     <div class="drawer-sep hidden" id="nav-sep-jefe">Jefes</div>
     <button data-view="reabastecer" id="nav-reab" class="hidden"><span class="ic"><svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="20" r="1.5"/><circle cx="17" cy="20" r="1.5"/><path d="M3 4h2l2.4 11h10.8L21 8H6.2"/></svg></span>Comprar</button>
     <button data-view="respaldos" id="nav-resp" class="hidden"><span class="ic"><svg class="i" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></span>Respaldos</button>
@@ -460,7 +490,7 @@ async function bootApp(){
   document.getElementById('fab-add').classList.toggle('show',esJefe());
   await loadProductos();
   const br=document.getElementById('btn-refresh');
-  if(br && !br.dataset.bound){br.dataset.bound='1';br.onclick=async()=>{br.disabled=true;br.textContent='…';try{await loadProductos();renderHome();renderZonaTabs();const v=document.querySelector('nav.drawer button[data-view].active');if(v){const view=v.dataset.view;if(view==='historial')await loadHistorial();if(view==='compras')await loadCompras();if(view==='ajustes')await loadAjustes();if(view==='cambios')await loadCambios();if(view==='reabastecer')renderReabastecer();if(view==='admin')await loadAdmin();}toast('Datos actualizados');}catch(e){toast('Error al actualizar');console.error(e);}br.disabled=false;br.textContent='↻ Actualizar';};}
+  if(br && !br.dataset.bound){br.dataset.bound='1';br.onclick=async()=>{br.disabled=true;br.textContent='…';try{await loadProductos();renderHome();renderZonaTabs();const v=document.querySelector('nav.drawer button[data-view].active');if(v){const view=v.dataset.view;if(view==='historial')await loadHistorial();if(view==='compras')await loadCompras();if(view==='ajustes')await loadAjustes();if(view==='cambios')await loadCambios();if(view==='movimientos'){movCache={};renderMovimientos()}if(view==='reabastecer')renderReabastecer();if(view==='admin')await loadAdmin();}toast('Datos actualizados');}catch(e){toast('Error al actualizar');console.error(e);}br.disabled=false;br.textContent='↻ Actualizar';};}
   renderHome();
   renderZonaTabs();
   switchView('inicio');
@@ -476,14 +506,15 @@ document.querySelectorAll('nav.drawer button[data-view]').forEach(btn=>{btn.oncl
 function switchView(view){
   if((view==='reabastecer'||view==='respaldos'||view==='cambios'||view==='admin')&&!esJefe())view='inicio';
   document.querySelectorAll('nav.drawer button[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view===view));
-  ['inicio','zona','historial','compras','ajustes','cambios','respaldos','reabastecer','admin'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==view));
+  ['inicio','zona','historial','compras','ajustes','movimientos','cambios','respaldos','reabastecer','admin'].forEach(v=>document.getElementById('view-'+v).classList.toggle('hidden',v!==view));
   const sec=document.getElementById('view-'+view);sec.classList.remove('view-in');void sec.offsetWidth;sec.classList.add('view-in');
-  const titles={inicio:'Inicio',zona:'Inventario',historial:'Salidas',compras:'Compras',ajustes:'Ajustes',cambios:'Historial de cambios',respaldos:'Respaldos',reabastecer:'Lista de compra',admin:'Admin'};
+  const titles={inicio:'Inicio',zona:'Inventario',historial:'Salidas',compras:'Compras',ajustes:'Ajustes',movimientos:'Movimientos',cambios:'Historial de cambios',respaldos:'Respaldos',reabastecer:'Lista de compra',admin:'Admin'};
   document.getElementById('header-title').textContent=titles[view]||'Inventario';
   if(view==='historial')loadHistorial();
   if(view==='compras')loadCompras();
   if(view==='ajustes')loadAjustes();
   if(view==='cambios')loadCambios();
+  if(view==='movimientos'){movCache={};renderMovimientos()}
   if(view==='respaldos')loadRespaldos();
   if(view==='reabastecer'){
     window._reabTienda=window._reabTienda||'all';
@@ -1220,6 +1251,118 @@ async function loadCompras(){
     <td>${r.productos?esc(r.productos.nombre):'—'}</td>
     <td class="pos">+${r.cantidad_comprada}</td>
     <td>${esc(r.usuario)}</td><td>${fmtFecha(r.creado_en)}</td></tr>`).join('')||'<tr><td colspan="4" class="empty">Sin compras</td></tr>';
+}
+// ===== Movimientos por producto (todos los usuarios) =====
+// Lista mínima (nombre y zona) → al tocar, resumen de sus últimos movimientos → "Ver historial completo" deja solo ese producto.
+let movZona='Todos',movAbierto=null,movDetalle=null,movFiltro='todo',movCache={},movUsuarios=null;
+const MOV_TIPO={compra:['Compra','mv-compra'],salida:['Salida','mv-salida'],ajuste:['Ajuste','mv-ajuste'],edicion:['Edición','mv-edicion']};
+async function nombresUsuarios(){
+  if(movUsuarios)return movUsuarios;
+  movUsuarios={};
+  const{data}=await sb.from('profiles').select('email,nombre');
+  (data||[]).forEach(u=>{if(u.email&&u.nombre)movUsuarios[u.email]=u.nombre});
+  return movUsuarios;
+}
+async function cargarMovs(p){
+  if(movCache[p.id])return movCache[p.id];
+  const id=p.id;
+  const[sal,com,aju,cam,usr]=await Promise.all([
+    sb.from('movimientos_salida').select('*').eq('producto_id',id).order('creado_en',{ascending:false}).limit(500),
+    sb.from('compras').select('*').eq('producto_id',id).order('creado_en',{ascending:false}).limit(500),
+    sb.from('ajustes').select('*').eq('producto_id',id).order('creado_en',{ascending:false}).limit(500),
+    sb.from('cambios_producto').select('*').in('producto_id',[String(id),p.nombre]).order('creado_en',{ascending:false}).limit(500)
+      .then(r=>r.error?sb.from('cambios_producto').select('*').eq('producto_nombre',p.nombre).order('creado_en',{ascending:false}).limit(500):r),
+    nombresUsuarios()
+  ]);
+  const num=v=>v==null||v===''?null:round2(v);
+  const out=[];
+  (sal.data||[]).forEach(r=>out.push({tipo:'salida',fecha:r.creado_en,usuario:r.usuario,cant:num(r.cantidad),antes:num(r.stock_anterior),despues:num(r.stock_nuevo)}));
+  (com.data||[]).forEach(r=>out.push({tipo:'compra',fecha:r.creado_en,usuario:r.usuario,cant:num(r.cantidad_comprada),antes:num(r.stock_anterior),despues:num(r.stock_nuevo)}));
+  (aju.data||[]).forEach(r=>out.push({tipo:'ajuste',fecha:r.creado_en,usuario:r.usuario,cant:num(r.diferencia),antes:num(r.stock_anterior),despues:num(r.stock_nuevo),motivo:r.motivo}));
+  (cam.data||[]).forEach(r=>out.push({tipo:'edicion',fecha:r.creado_en||r.fecha,usuario:r.usuario,campo:r.campo,vAntes:r.valor_antes,vDespues:r.valor_despues}));
+  out.forEach(m=>{m.quien=(m.usuario&&usr[m.usuario])||m.usuario||'—'});
+  out.sort((a,b)=>new Date(b.fecha)-new Date(a.fecha));
+  movCache[p.id]=out;
+  return out;
+}
+function diaCorto(iso){const d=new Date(iso),h=new Date();h.setHours(0,0,0,0);const x=new Date(d);x.setHours(0,0,0,0);const dias=Math.round((h-x)/864e5);if(dias===0)return'hoy';if(dias===1)return'ayer';return d.toLocaleDateString('es-MX',{day:'2-digit',month:'2-digit'})}
+function diaLargo(iso){const d=new Date(iso),c=diaCorto(iso),f=d.toLocaleDateString('es-MX',{day:'numeric',month:'short',year:d.getFullYear()!==new Date().getFullYear()?'numeric':undefined});return c==='hoy'?'Hoy · '+f:c==='ayer'?'Ayer · '+f:f}
+function cantMov(m){if(m.tipo==='edicion')return`<span class="mv-q mv-campo">${esc(m.campo||'')}</span>`;if(m.cant==null)return'';return`<span class="mv-q ${m.cant<0?'neg':'pos'}">${m.cant>0?'+':''}${m.cant}</span>`}
+function tagMov(m){const[t,c]=MOV_TIPO[m.tipo];return`<span class="mv-tag ${c}">${t}</span>`}
+function renderMovimientos(){
+  document.getElementById('mov-lista-wrap').classList.toggle('hidden',!!movDetalle);
+  document.getElementById('mov-detalle').classList.toggle('hidden',!movDetalle);
+  if(movDetalle){renderMovDetalle();return}
+  const tabs=document.getElementById('mov-tabs');
+  if(!tabs.dataset.built){
+    tabs.dataset.built='1';
+    tabs.innerHTML=['Todos',...ZONAS].map(z=>`<button data-z="${esc(z)}" class="${z===movZona?'active':''}">${esc(z)}</button>`).join('');
+    tabs.onclick=e=>{const b=e.target.closest('button');if(!b)return;movZona=b.dataset.z;tabs.querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderMovLista()};
+    document.getElementById('mov-search').oninput=()=>renderMovLista();
+  }
+  renderMovLista();
+}
+function renderMovLista(){
+  const cont=document.getElementById('mov-lista');
+  const q=document.getElementById('mov-search').value.trim();
+  let list=movZona==='Todos'?allProductos.slice():allProductos.filter(p=>p.zona===movZona);
+  list=q?fuzzyFilter(list,q).items:list.sort((a,b)=>colador(a.nombre,b.nombre));
+  if(!list.length){cont.innerHTML='<div class="empty">Sin resultados</div>';return}
+  cont.innerHTML=`<div class="card-list">${list.map(p=>{
+    const abierto=p.id===movAbierto;
+    let extra='';
+    if(abierto){
+      const movs=movCache[p.id];
+      if(!movs)extra='<div class="mv-res"><div class="empty loading" style="padding:14px">Cargando…</div></div>';
+      else if(!movs.length)extra='<div class="mv-res"><div class="empty" style="padding:14px">Sin movimientos</div></div>';
+      else extra=`<div class="mv-res">${movs.slice(0,5).map(m=>`<div class="mv-row">${tagMov(m)}<span class="mv-dia">${diaCorto(m.fecha)}</span>${cantMov(m)}</div>`).join('')}
+        <div class="mv-mas"><button class="btn" data-detalle="${esc(p.id)}">Ver historial completo (${movs.length})</button></div></div>`;
+    }
+    return`<div class="card mv-prod${abierto?' open':''}" data-id="${esc(p.id)}"><div class="info"><div class="nombre">${esc(p.nombre)}</div>
+      <div class="sub">${esc(p.zona||'')}${p.subzona?' · '+esc(p.subzona):''}</div></div><span class="mv-chev">›</span></div>${extra}`;
+  }).join('')}</div>`;
+  cont.querySelectorAll('.mv-prod').forEach(c=>c.onclick=async()=>{
+    const p=allProductos.find(x=>String(x.id)===c.dataset.id);if(!p)return;
+    movAbierto=movAbierto===p.id?null:p.id;
+    renderMovLista();
+    if(movAbierto===p.id&&!movCache[p.id]){await cargarMovs(p);if(movAbierto===p.id&&!movDetalle)renderMovLista()}
+  });
+  cont.querySelectorAll('[data-detalle]').forEach(b=>b.onclick=()=>{movDetalle=allProductos.find(x=>String(x.id)===b.dataset.detalle)||null;movFiltro='todo';renderMovimientos();window.scrollTo(0,0)});
+}
+function renderMovDetalle(){
+  const p=allProductos.find(x=>x.id===movDetalle.id)||movDetalle;
+  const cont=document.getElementById('mov-detalle');
+  const movs=movCache[p.id];
+  const filtros=[['todo','Todo'],['compra','Compras'],['salida','Salidas'],['ajuste','Ajustes'],['edicion','Ediciones']];
+  let cuerpo;
+  if(!movs)cuerpo='<div class="empty loading">Cargando…</div>';
+  else{
+    const lista=movFiltro==='todo'?movs:movs.filter(m=>m.tipo===movFiltro);
+    if(!lista.length)cuerpo='<div class="empty">Sin movimientos</div>';
+    else{
+      let dia='';cuerpo='';
+      lista.forEach(m=>{
+        const d=diaLargo(m.fecha);
+        if(d!==dia){dia=d;cuerpo+=`<div class="mv-dia-head">${esc(d)}</div>`}
+        const hora=new Date(m.fecha).toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'});
+        let det='';
+        if(m.tipo==='edicion')det=`${esc(m.campo||'')}: <b>${esc(m.vAntes||'—')}</b> → <b>${esc(m.vDespues||'—')}</b>`;
+        else if(m.antes!=null&&m.despues!=null)det=`Antes <b>${m.antes}</b> → después <b>${m.despues}</b>`;
+        else det='<span class="mv-mail">Sin dato de antes/después</span>';
+        if(m.motivo)det+=`${det?' · ':''}“${esc(m.motivo)}”`;
+        cuerpo+=`<div class="mv-card"><div class="mv-l1">${tagMov(m)}${m.tipo==='edicion'?'':cantMov(m)}</div>
+          <div class="mv-l2">${hora} · <b>${esc(m.quien)}</b>${m.quien!==m.usuario&&m.usuario?` <span class="mv-mail">${esc(m.usuario)}</span>`:''}${det?'<br>'+det:''}</div></div>`;
+      });
+    }
+  }
+  cont.innerHTML=`<div class="mv-head"><div class="info"><div class="nombre">${esc(p.nombre)}</div>
+      <div class="sub">${esc(p.zona||'')}${p.subzona?' · '+esc(p.subzona):''} · Stock actual <b>${p.stock_actual??0} ${esc(p.unidad||'')}</b></div></div>
+      <button class="mv-x" id="mov-cerrar" aria-label="Cerrar">✕</button></div>
+    <div class="filter-row" id="mov-filtros">${filtros.map(([k,t])=>`<div class="filter-chip${k===movFiltro?' active':''}" data-f="${k}">${t}${movs?` · ${k==='todo'?movs.length:movs.filter(m=>m.tipo===k).length}`:''}</div>`).join('')}</div>
+    ${cuerpo}`;
+  document.getElementById('mov-cerrar').onclick=()=>{movDetalle=null;renderMovimientos()};
+  document.getElementById('mov-filtros').onclick=e=>{const c=e.target.closest('.filter-chip');if(!c)return;movFiltro=c.dataset.f;renderMovDetalle()};
+  if(!movs)cargarMovs(p).then(()=>{if(movDetalle&&movDetalle.id===p.id)renderMovDetalle()});
 }
 async function loadCambios(){
   const tbody=document.querySelector('#tabla-cambios tbody');
