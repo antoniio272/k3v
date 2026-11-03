@@ -1362,15 +1362,21 @@
     }
 
     /* ---- Transición entre vistas ---- */
-    main > section.view-enter { animation: viewIn .55s var(--ease-out) both; }
-    main > section.view-enter.from-left { animation-name: viewInLeft; }
-    @keyframes viewIn { from { opacity: 0; transform: translate3d(18px, 8px, 0); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
-    @keyframes viewInLeft { from { opacity: 0; transform: translate3d(-18px, 8px, 0); filter: blur(4px); } to { opacity: 1; transform: none; filter: none; } }
+    /* Solo se animan los primeros bloques de la vista (título, filtros…), nunca la sección completa:
+       en iPhone, animar o desenfocar una sección muy larga (p. ej. Historial con cientos de registros)
+       agota la memoria gráfica y Safari recarga la página. */
+    main > section.view-enter > :nth-child(-n+3) { animation: viewIn .5s var(--ease-out) both; }
+    main > section.view-enter.from-left > :nth-child(-n+3) { animation-name: viewInLeft; }
+    main > section.view-enter > :nth-child(2) { animation-delay: .04s; }
+    main > section.view-enter > :nth-child(3) { animation-delay: .08s; }
+    @keyframes viewIn { from { opacity: 0; transform: translate3d(14px, 0, 0); } to { opacity: 1; transform: none; } }
+    @keyframes viewInLeft { from { opacity: 0; transform: translate3d(-14px, 0, 0); } to { opacity: 1; transform: none; } }
 
     /* Entrada escalonada: solo mientras la vista está "armada" (al cambiar de sección o de semana) */
     .fade-up { animation: none; }
     @keyframes rise { from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.985); } to { opacity: 1; transform: none; } }
-    body.anim-armed .stagger-list > * { animation: rise .6s var(--ease-out) both; }
+    /* Entrada escalonada solo para las primeras 10 tarjetas; el resto aparece directo (cuida memoria en iPhone) */
+    body.anim-armed .stagger-list > :nth-child(-n+10) { animation: rise .6s var(--ease-out) both; }
     body.anim-armed .stagger-list > *:nth-child(1) { animation-delay: .03s; }
     body.anim-armed .stagger-list > *:nth-child(2) { animation-delay: .07s; }
     body.anim-armed .stagger-list > *:nth-child(3) { animation-delay: .11s; }
@@ -1380,7 +1386,7 @@
     body.anim-armed .stagger-list > *:nth-child(7) { animation-delay: .27s; }
     body.anim-armed .stagger-list > *:nth-child(8) { animation-delay: .31s; }
     body.anim-armed .stagger-list > *:nth-child(9) { animation-delay: .35s; }
-    body.anim-armed .stagger-list > *:nth-child(n+10) { animation-delay: .39s; }
+    body.anim-armed .stagger-list > *:nth-child(10) { animation-delay: .39s; }
 
     /* ---- Menú lateral ---- */
     #app-drawer-backdrop {
@@ -1634,6 +1640,14 @@
       display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 18px;
       background: radial-gradient(60vmax 40vmax at 50% 40%, rgba(201,162,39,0.12), transparent 60%), var(--bg);
       transition: opacity .6s var(--ease-out), visibility .6s;
+    }
+    #splash, #splash * {
+      outline: none !important;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-user-drag: none;
+      -webkit-tap-highlight-color: transparent;
     }
     #splash.gone { opacity: 0; visibility: hidden; pointer-events: none; }
     #splash .ring { position: relative; width: 108px; height: 108px; display: flex; align-items: center; justify-content: center; }
