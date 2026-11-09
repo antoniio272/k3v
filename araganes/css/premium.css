@@ -698,6 +698,48 @@
     #to-top.show { opacity: 1; transform: none; pointer-events: auto; }
     #to-top:hover { transform: translateY(-2px); }
 
+    /* =====================================================
+       PANTALLAS TÁCTILES (iPhone, iPad, Android)
+       Safari en iPhone deja zonas en negro al hacer scroll si cada cuadro tiene que
+       recomponer fondos animados, desenfoques y superficies translúcidas.
+       Aquí todo es fijo y sólido; en computadora se conserva el aspecto completo.
+       ===================================================== */
+    @media (hover: none) and (pointer: coarse) {
+      /* Fondo: degradado fijo, sin movimiento ni grano */
+      body::before { animation: none; inset: 0; }
+      body::after { display: none; }
+      header h1 { animation: none; }
+
+      /* Superficies sólidas (sin mezclar con lo de atrás) */
+      .card, .card:hover { background-color: var(--bg-card-solid); background-image: none; }
+      .summary-pill { background: var(--bg-card-solid); }
+
+      /* Sin desenfoques: fondos opacos */
+      header, header.is-scrolled { background: rgba(9, 9, 11, 0.97); backdrop-filter: none; -webkit-backdrop-filter: none; }
+      nav.top-nav-desktop > div { background: #0e0e11; backdrop-filter: none; -webkit-backdrop-filter: none; }
+      #app-drawer { background: #111114; backdrop-filter: none; -webkit-backdrop-filter: none; }
+      #app-drawer-backdrop { background: rgba(0, 0, 0, 0.7); backdrop-filter: none; -webkit-backdrop-filter: none; }
+      .dropdown-menu, #toast, #to-top { background: #18181c; backdrop-filter: none; -webkit-backdrop-filter: none; }
+      #confirm-overlay, #edit-mov-overlay, #sueldo-modal-overlay, #mov-detail-overlay, #lock-overlay, #ui-dialog, .modal-ghost {
+        background: rgba(3, 3, 4, 0.86) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+      .login-card { backdrop-filter: none; -webkit-backdrop-filter: none; background: #141417 !important; }
+      .emp-lock-overlay { background: rgba(9, 9, 11, 0.88); backdrop-filter: none; -webkit-backdrop-filter: none; }
+
+      /* El efecto de "pasar el cursor" se queda pegado tras tocar en iPhone */
+      .card:hover, .summary-pill:hover, .chip-monto:hover, .week-nav-btn:hover, .emp-card:hover,
+      .btn-yellow:hover:not(:disabled), .btn-unlock:hover:not(:disabled), #app-drawer .drawer-item:hover, #to-top:hover {
+        transform: none;
+      }
+      .card.cursor-pointer:hover, .hist-card:hover { transform: none; }
+
+      /* iPhone hace zoom a la página al tocar un campo con letra menor a 16 px */
+      input:not([type="checkbox"]):not([type="radio"]), select, textarea, .emp-search, .ui-dialog-input { font-size: 16px !important; }
+      .amount-wrap input:not([type="checkbox"]):not([type="radio"]) { font-size: 20px !important; }
+    }
+
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
       body::before { animation: none; }
