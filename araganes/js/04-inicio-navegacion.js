@@ -92,6 +92,7 @@
       document.getElementById("mov-fecha").value = localDateStr(new Date());
       cargarTodo(false, true).then(() => {
         if (currentUser && currentUser.rol === "admin") purgarMovimientosAntiguos();
+        mostrarSolicitudesAlEntrar();
       });
       iniciarRealtime();
       startInactivityWatcher();
@@ -190,7 +191,7 @@
         name = "nuevo";
       }
 
-      const tabs = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const tabs = ["dashboard", "nuevo", "historial", "solicitudes", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       if (name === "individual") {
         llenarSelectIndividual();
       }

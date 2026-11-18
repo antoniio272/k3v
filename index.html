@@ -1013,7 +1013,7 @@
     }
 
   </style>
-  <style id="premium-layer">
+  <style>
     /* =====================================================
        CAPA PREMIUM · interfaz, movimiento y navegación
        Concepto: caja fuerte nocturna — negro cálido, oro cepillado,
@@ -1538,7 +1538,7 @@
     textarea.ui-dialog-input { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; min-height: 180px; }
     .ui-dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .ui-dialog-actions button { padding: 10px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 600; min-width: 96px; }
-    .btn-danger { background: linear-gradient(180deg, #d76565, #b54646); color: #fff; border: 1px solid rgba(255,160,160,0.25); box-shadow: 0 8px 22px -10px rgba(196,84,84,0.8); transition: transform .25s var(--ease-spring), filter .2s; }
+    .btn-danger { position: relative; overflow: hidden; background: linear-gradient(180deg, #d76565, #b54646); color: #fff; border: 1px solid rgba(255,160,160,0.25); box-shadow: 0 8px 22px -10px rgba(196,84,84,0.8); transition: transform .25s var(--ease-spring), filter .2s; }
     .btn-danger:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
     /* ---- Toast ---- */
@@ -1761,6 +1761,205 @@
       body::before { animation: none; }
     }
   </style>
+  <style>
+    /* =====================================================
+       SOLICITUDES DE BORRADO
+       ===================================================== */
+
+    /* ---- Sobre en el encabezado ---- */
+    .solic-btn {
+      position: relative;
+      width: 38px; height: 38px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: color .25s, border-color .25s, background-color .25s, transform .25s var(--ease-spring);
+    }
+    .solic-btn:hover { color: var(--gold-bright); border-color: var(--gold-border); background: var(--gold-dim); }
+    .solic-btn:active { transform: scale(0.94); }
+    .solic-btn.has-pending { color: var(--gold-bright); border-color: var(--gold-border); }
+    .solic-badge {
+      position: absolute;
+      top: -6px; right: -6px;
+      min-width: 19px; height: 19px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--gold-grad);
+      color: #120e02;
+      font-size: 10.5px;
+      font-weight: 700;
+      line-height: 19px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 0 0 2px var(--bg);
+    }
+    .solic-badge.bump { animation: solicBump .5s var(--ease-spring); }
+    @keyframes solicBump { 0% { transform: scale(0.4); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+    .drawer-count {
+      min-width: 22px; height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--gold-grad);
+      color: #120e02;
+      font-size: 11px; font-weight: 700;
+      line-height: 20px; text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---- Movimiento con borrado pendiente: sigue contando, se ve atenuado ---- */
+    .mov-borrado-pendiente {
+      opacity: 0.58;
+      border-style: dashed !important;
+      border-color: rgba(232, 176, 74, 0.45) !important;
+    }
+    .mov-borrado-pendiente:hover { opacity: 0.8; }
+    .sol-badge-mov {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      padding: 2px 7px;
+      border-radius: 6px;
+      color: #e8b04a;
+      background: rgba(212, 146, 10, 0.12);
+      border: 1px solid rgba(212, 146, 10, 0.35);
+      white-space: nowrap;
+      margin-left: 4px;
+    }
+
+    /* ---- Vista ---- */
+    .sol-seccion {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .sol-seccion-count:not(:empty) {
+      min-width: 20px; height: 18px; padding: 0 6px;
+      border-radius: 999px;
+      background: var(--gold-grad); color: #120e02;
+      font-size: 10.5px; line-height: 18px; text-align: center;
+      letter-spacing: 0;
+    }
+    /* El historial puede ser largo: no se anima al entrar a la vista (cuida memoria en iPhone) */
+    main > section.view-enter > .no-enter { animation: none; }
+
+    .sol-card { display: flex; flex-direction: column; gap: 12px; }
+    .sol-tipo {
+      font-size: 11px; font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+    }
+    .sol-estado {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .sol-estado-pendiente { color: #e8b04a; background: rgba(212, 146, 10, 0.12); border: 1px solid rgba(212, 146, 10, 0.35); }
+
+    .sol-motivo, .sol-aviso-detalle {
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+    .sol-aviso-detalle { margin-top: 10px; background: rgba(212, 146, 10, 0.07); border-color: rgba(212, 146, 10, 0.3); }
+    .sol-motivo-label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .sol-aviso-detalle .sol-motivo-label { color: #e8b04a; }
+    .sol-motivo p, .sol-aviso-detalle p {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .sol-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+    .sol-acciones { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .sol-acciones button { min-width: 120px; }
+    @media (max-width: 480px) { .sol-acciones button { flex: 1; min-width: 0; } }
+
+    /* ---- Historial de solicitudes: filas grises con estado en la esquina ---- */
+    .sol-hist {
+      position: relative;
+      padding: 11px 14px;
+      padding-right: 130px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      opacity: 0.72;
+      transition: opacity .25s, border-color .25s, background-color .25s;
+    }
+    .sol-hist:hover, .sol-hist:focus-visible { opacity: 1; border-color: var(--border-hover); }
+    .sol-hist.is-open { opacity: 1; padding-right: 14px; background: var(--bg-card-solid); border-color: var(--border); cursor: default; }
+    .sol-hist-linea { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sol-hist.is-open .sol-hist-linea { white-space: normal; padding-right: 120px; }
+    .sol-hist-sub { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+    .sol-esquina {
+      position: absolute;
+      top: 10px; right: 12px;
+      font-size: 9.5px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .sol-aprobada .sol-esquina { color: #5ecf8f; }
+    .sol-rechazada .sol-esquina { color: #e08888; }
+    .sol-cancelada .sol-esquina, .sol-sin_efecto .sol-esquina { color: var(--text-dim); }
+    .sol-hist-detalle { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; cursor: auto; }
+    .sol-hist-detalle .sol-mov { padding-top: 2px; }
+    @media (max-width: 480px) {
+      .sol-hist { padding-right: 14px; padding-top: 28px; }
+      .sol-hist.is-open .sol-hist-linea { padding-right: 0; }
+      .sol-esquina { top: 9px; left: 14px; right: auto; }
+    }
+
+    /* ---- Ventanas ---- */
+    #solic-overlay, #motivo-overlay {
+      background: rgba(3, 3, 4, 0.62);
+      backdrop-filter: blur(14px) saturate(0.9);
+      -webkit-backdrop-filter: blur(14px) saturate(0.9);
+    }
+    #solic-overlay:not(.hidden), #motivo-overlay:not(.hidden) { animation: fadeOverlay .35s var(--ease-out) both; }
+    .solic-card { max-height: 88vh; max-height: 88dvh; }
+    #solic-overlay-lista .sol-card { background-color: rgba(255, 255, 255, 0.025); }
+    #motivo-resumen .sol-mov {
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      #solic-overlay, #motivo-overlay {
+        background: rgba(3, 3, 4, 0.86);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .mov-borrado-pendiente:hover { opacity: 0.58; }
+      .sol-hist:hover { opacity: 0.72; }
+      .sol-hist.is-open:hover { opacity: 1; }
+    }
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 </head>
 <body class="min-h-screen font-sans">
@@ -1812,6 +2011,10 @@
           </div>
         </div>
         <div class="flex items-center gap-3">
+          <button type="button" id="btn-solicitudes" class="solic-btn" onclick="showTab('solicitudes')" aria-label="Solicitudes de borrado" title="Solicitudes de borrado">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>
+            <span id="solic-badge" class="solic-badge hidden">0</span>
+          </button>
           <div id="user-badge" class="user-chip text-xs"></div>
           <div id="status" class="text-[11px] text-[var(--text-dim)] hidden sm:block tabular-nums">Cargando...</div>
           <button type="button" onclick="cerrarSesion()" class="text-xs text-[var(--text-muted)] hover:text-white border border-[var(--border)] rounded-lg px-2.5 py-1.5 transition hover:border-[var(--border-hover)]">Salir</button>
@@ -1825,6 +2028,7 @@
         <button type="button" onclick="showTab('dashboard')" id="tab-dashboard" class="tab-btn admin-only px-4 py-3 tab-active whitespace-nowrap">Dashboard</button>
         <button type="button" onclick="showTab('nuevo')" id="tab-nuevo" class="tab-btn px-4 py-3 whitespace-nowrap">Movimiento</button>
         <button type="button" onclick="showTab('historial')" id="tab-historial" class="tab-btn px-4 py-3 whitespace-nowrap">Historial</button>
+        <button type="button" onclick="showTab('solicitudes')" id="tab-solicitudes" class="tab-btn px-4 py-3 whitespace-nowrap">Solicitudes</button>
         <button type="button" onclick="showTab('individual')" id="tab-individual" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Desglose</button>
         <button type="button" onclick="showTab('ahorros')" id="tab-ahorros" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorros</button>
         <button type="button" onclick="showTab('ahorroespecial')" id="tab-ahorroespecial" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorro esp.</button>
@@ -2273,6 +2477,27 @@
         </div>
       </section>
 
+      <!-- ========== SOLICITUDES DE BORRADO (todos) ========== -->
+      <section id="view-solicitudes" class="hidden space-y-6">
+        <div>
+          <h2 class="page-title">Solicitudes</h2>
+          <p class="text-sm text-gray-400 mt-0.5">El movimiento sigue contando hasta que un admin apruebe el borrado.</p>
+        </div>
+        <div>
+          <h3 class="sol-seccion">Pendientes <span id="sol-pend-count" class="sol-seccion-count"></span></h3>
+          <div id="solicitudes-pendientes" class="stagger-list space-y-3"></div>
+          <div id="solicitudes-pendientes-empty" class="hidden empty-state">
+            <div class="empty-icon">✓</div>
+            <p class="font-medium text-gray-400">Sin solicitudes pendientes</p>
+          </div>
+        </div>
+        <div class="no-enter">
+          <h3 class="sol-seccion">Historial de solicitudes</h3>
+          <div id="solicitudes-historial" class="space-y-2"></div>
+          <p id="solicitudes-historial-empty" class="hidden text-sm text-gray-500 py-4">Todavía no hay solicitudes cerradas.</p>
+        </div>
+      </section>
+
       <!-- ========== EMPLEADOS (solo admin) ========== -->
 
       <section id="view-empleados" class="hidden space-y-6 admin-only">
@@ -2364,6 +2589,11 @@
       <button type="button" class="drawer-item" data-tab="historial" onclick="navegarDrawer('historial')">
         <span class="di-icon">☰</span>
         <span class="di-label">Historial</span>
+      </button>
+      <button type="button" class="drawer-item" data-tab="solicitudes" onclick="navegarDrawer('solicitudes')">
+        <span class="di-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg></span>
+        <span class="di-label">Solicitudes</span>
+        <span id="drawer-solic-count" class="drawer-count hidden">0</span>
       </button>
 
       <div class="drawer-section admin-only">Ahorros</div>
@@ -2565,6 +2795,41 @@
     </div>
   </div>
 
+  <!-- ========== SOLICITUDES PENDIENTES (al entrar, admins) ========== -->
+  <div id="solic-overlay" class="fixed inset-0 z-[94] hidden flex items-center justify-center px-4" onclick="if(event.target===this) cerrarSolicitudesPendientes()">
+    <div class="confirm-card solic-card rounded-xl p-5 w-full max-w-lg flex flex-col gap-3">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="text-base font-semibold text-white tracking-tight">Solicitudes pendientes</h3>
+          <p id="solic-overlay-sub" class="text-xs text-gray-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="cerrarSolicitudesPendientes()" class="text-gray-500 hover:text-white text-lg leading-none px-2" aria-label="Cerrar">×</button>
+      </div>
+      <div id="solic-overlay-lista" class="space-y-3 overflow-y-auto scrollbar min-h-0"></div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarSolicitudesPendientes()" class="btn-ghost flex-1 py-2.5 rounded-lg text-sm">Revisar después</button>
+        <button type="button" onclick="cerrarSolicitudesPendientes(); showTab('solicitudes')" class="btn-outline flex-1 py-2.5 rounded-lg text-sm">Ver historial</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MOTIVO (solicitar / cancelar borrado) ========== -->
+  <div id="motivo-overlay" class="fixed inset-0 z-[96] hidden flex items-center justify-center px-4" onclick="if(event.target===this) cerrarMotivo()">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-3">
+      <h3 id="motivo-titulo" class="text-base font-semibold text-white tracking-tight"></h3>
+      <div id="motivo-resumen"></div>
+      <div>
+        <label for="motivo-texto" class="block text-xs text-gray-500 mb-1">Motivo</label>
+        <textarea id="motivo-texto" rows="3" maxlength="300" class="w-full rounded-lg px-3 py-2 text-sm"></textarea>
+        <p id="motivo-error" class="hidden text-[12px] text-[#e08888] mt-1.5">Escribe el motivo para continuar.</p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarMotivo()" class="btn-ghost flex-1 py-2.5 rounded-lg">Volver</button>
+        <button type="button" id="btn-motivo-ok" onclick="enviarMotivo()" class="btn-yellow flex-1 py-2.5 rounded-lg">Enviar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl font-medium shadow-lg hidden z-50 transition-all"></div>
 
@@ -2720,6 +2985,8 @@
     }
 
 
+  </script>
+  <script>
     // Zona horaria: Ciudad Victoria, Tamaulipas / Monterrey (Centro de México, UTC-6)
     const APP_TZ = "America/Monterrey";
 
@@ -3308,6 +3575,8 @@
       return true;
     }
 
+  </script>
+  <script>
     const CACHE_KEY = "sueldos_cache_v3";
     const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
     const USER_KEY = "sueldos_user";
@@ -3364,7 +3633,7 @@
     }
 
     function puedeBorrarMovimiento(m) {
-      // Por ahora solo admin borra directo (empleados: flujo de solicitud pendiente de diseño)
+      // Solo admin borra directo; los empleados piden el borrado (ver 11-solicitudes.js)
       if (!currentUser || !m) return false;
       return currentUser.rol === "admin";
     }
@@ -3412,6 +3681,7 @@
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           empleados,
           movimientos,
+          solicitudes: solicitudesRegistros,
           sueldosPagadosDB,
           ts: Date.now()
         }));
@@ -3425,7 +3695,7 @@
         const data = JSON.parse(raw);
         if (!data || !data.ts) return false;
         empleados = data.empleados || [];
-        movimientos = data.movimientos || [];
+        movimientos = separarSolicitudes((data.movimientos || []).concat(data.solicitudes || []));
         if (data.sueldosPagadosDB) {
           sueldosPagadosDB = data.sueldosPagadosDB;
           sueldosPagadosCargados = true;
@@ -3449,6 +3719,7 @@
       if (typeof renderPrestamos === "function") renderPrestamos();
       if (typeof renderGastosNegocio === "function") renderGastosNegocio();
       if (typeof renderIngresosNegocio === "function") renderIngresosNegocio();
+      if (typeof renderSolicitudes === "function") renderSolicitudes();
     }
 
     async function cargarPerfil(userId) {
@@ -3508,7 +3779,7 @@
         }
 
         empleados = (empRes.data || []).map(mapEmpleado);
-        movimientos = (movRes.data || []).map(mapMovimiento);
+        movimientos = separarSolicitudes((movRes.data || []).map(mapMovimiento));
         guardarCache();
         aplicarDatosEnPantalla();
         setStatus("Actualizado " + new Date().toLocaleTimeString("es-MX", { timeZone: APP_TZ, hour: "2-digit", minute: "2-digit" }) + " · sync ON");
@@ -3529,7 +3800,7 @@
           fetchAllRows("sueldos_pagados", "semana,empleado")
         ]);
         if (!empRes.error) empleados = (empRes.data||[]).map(mapEmpleado);
-        if (!movRes.error) movimientos = (movRes.data||[]).map(mapMovimiento);
+        if (!movRes.error) movimientos = separarSolicitudes((movRes.data||[]).map(mapMovimiento));
         if (!sueldosRes.error) { sueldosPagadosDB = sueldosRes.data||[]; sueldosPagadosCargados=true; }
         guardarCache();
         aplicarDatosEnPantalla();
@@ -3646,6 +3917,7 @@
       stopInactivityWatcher();
       isLocked = false;
       currentUser = null;
+      if (typeof reiniciarSolicitudes === "function") reiniciarSolicitudes();
       try { sb.auth.signOut(); } catch (e) {}
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(ACTIVITY_KEY);
@@ -3827,6 +4099,8 @@
       }
     }
 
+  </script>
+  <script>
     // =====================================================
     // LIMPIEZA AUTOMÁTICA DE MOVIMIENTOS ANTIGUOS
     // =====================================================
@@ -3921,6 +4195,7 @@
       document.getElementById("mov-fecha").value = localDateStr(new Date());
       cargarTodo(false, true).then(() => {
         if (currentUser && currentUser.rol === "admin") purgarMovimientosAntiguos();
+        mostrarSolicitudesAlEntrar();
       });
       iniciarRealtime();
       startInactivityWatcher();
@@ -4019,7 +4294,7 @@
         name = "nuevo";
       }
 
-      const tabs = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const tabs = ["dashboard", "nuevo", "historial", "solicitudes", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       if (name === "individual") {
         llenarSelectIndividual();
       }
@@ -4061,6 +4336,8 @@
       });
     }
 
+  </script>
+  <script>
     // =====================================================
     // DASHBOARD
     // =====================================================
@@ -4599,6 +4876,8 @@
     }
 
 
+  </script>
+  <script>
     // =====================================================
     // DESGLOSE INDIVIDUAL (semana + empleado)
     // =====================================================
@@ -4659,7 +4938,7 @@
             return `
             <div class="flex flex-col gap-0.5 text-sm py-2 border-b border-gray-800">
               <div class="flex justify-between gap-2">
-                <span class="text-gray-300">${formatMovimientoCuando(m)} · <span class="text-white font-medium">${m.tipo}</span>${metodo ? ` · <span class="text-[#e0b83a]">${metodo}</span>` : ""}${resp}</span>
+                <span class="text-gray-300">${formatMovimientoCuando(m)} · <span class="text-white font-medium">${m.tipo}</span>${badgeBorradoPendiente(m)}${metodo ? ` · <span class="text-[#e0b83a]">${metodo}</span>` : ""}${resp}</span>
                 <span class="font-bold whitespace-nowrap ${esGasto(m.tipo) || m.tipo === "Adelanto" || m.tipo === "Ahorro" || m.tipo === "AhorroEspecial" || m.tipo === "Fiado" || m.tipo === "CuotaPrestamo" || m.tipo === "Penalizacion" || m.tipo === "Descuento" ? "text-[#e08888]" : "text-[#5ecf8f]"}">${formatMoney(montoParaEmpleado(m, emp))}</span>
               </div>
               ${nota ? `<div class="text-xs text-gray-400 truncate">${esc(nota)}</div>` : ""}
@@ -5222,6 +5501,8 @@
       }
     }
 
+  </script>
+  <script>
     function setTipo(tipo) {
       tipoSeleccionado = tipo;
       const activeMap = {
@@ -5767,6 +6048,8 @@
       requestAnimationFrame(frame);
     }
 
+  </script>
+  <script>
     // =====================================================
     // HISTORIAL
     // =====================================================
@@ -5807,10 +6090,11 @@
       if (empty) empty.classList.add("hidden");
       const isAdmin = currentUser && currentUser.rol === "admin";
       cont.innerHTML = lista.map(m => `
-        <div class="card rounded-xl p-4 flex items-start justify-between gap-3">
+        <div class="card rounded-xl p-4 flex items-start justify-between gap-3${claseBorradoPendiente(m)}">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="tabular-nums font-semibold text-white">${formatMoney(m.monto)}</span>
+              ${badgeBorradoPendiente(m)}
             </div>
             <div class="text-sm text-gray-400 mt-1.5">${formatMovimientoCuando(m)}${notasVisibles(m.notas) ? ` · ${esc(notasVisibles(m.notas))}` : ""}</div>
             ${m.responsable ? `<div class="text-[11px] text-gray-500 mt-1">Registró: <span class="text-gray-300">${esc(m.responsable)}</span></div>` : ""}
@@ -6241,10 +6525,11 @@
 
       const isAdmin = currentUser && currentUser.rol === "admin";
       cont.innerHTML = lista.map(m => `
-        <div class="card rounded-xl p-4 flex items-start justify-between gap-3">
+        <div class="card rounded-xl p-4 flex items-start justify-between gap-3${claseBorradoPendiente(m)}">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="tabular-nums font-semibold text-white">${formatMoney(m.monto)}</span>
+              ${badgeBorradoPendiente(m)}
             </div>
             <div class="text-sm text-gray-400 mt-1.5">
               ${formatMovimientoCuando(m)}${notasVisibles(m.notas) ? ` · ${esc(notasVisibles(m.notas))}` : ""}
@@ -6259,6 +6544,8 @@
       `).join("");
     }
 
+  </script>
+  <script>
     function fechaMovimientoLocal(m) {
       // ÚNICAMENTE la fecha de negocio del movimiento (campo fecha).
       // No usar created_at: la hora de registro en UTC/local puede ser otro día calendario.
@@ -6597,12 +6884,13 @@
           : `<span class="tabular-nums font-semibold text-[var(--text)]">${formatMoney(unit)}</span>`;
 
         return `
-          <div class="hist-card card rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer" onclick='abrirDetalleMovimiento("${escAttr(mid)}")' title="Ver detalle">
+          <div class="hist-card card rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer${claseBorradoPendiente(m)}" onclick='abrirDetalleMovimiento("${escAttr(mid)}")' title="Ver detalle">
             <div class="hist-bar" style="background:${barColor}"></div>
             <div class="flex-1 min-w-0 pl-1">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-white text-[14px]" title="${esc(etiquetaEmpleadosMov(m))}">${esc(etiquetaEmpleadosMov(m))}</span>
                 <span class="text-[11px] px-2 py-0.5 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] ${colorTipo} font-medium">${esc(m.tipo)}</span>
+                ${badgeBorradoPendiente(m)}
               </div>
               <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-[13px] text-[var(--text-muted)]">
                 ${montoHtml}
@@ -6614,6 +6902,8 @@
             <div class="flex flex-col gap-1 shrink-0" onclick="event.stopPropagation()">
               ${puedeEditarMovimiento(m) ? `<button type="button" onclick='abrirEditarMovimiento("${escAttr(mid)}")' class="text-aragan-yellow text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(201,162,39,0.1)] transition">Editar</button>` : ""}
               ${puedeBorrarMovimiento(m) ? `<button type="button" onclick='borrarMovimiento("${escAttr(mid)}")' class="text-[var(--text-dim)] hover:text-[#e08888] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(196,84,84,0.1)] transition">Eliminar</button>` : ""}
+              ${puedeSolicitarBorrado(m) ? `<button type="button" onclick='solicitarBorrado("${escAttr(mid)}")' class="text-[var(--text-dim)] hover:text-[#e08888] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(196,84,84,0.1)] transition">Borrar</button>` : ""}
+              ${solicitudPendienteDe(m) ? `<button type="button" onclick='verSolicitudDeMovimiento("${escAttr(mid)}")' class="text-[var(--text-muted)] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(255,255,255,0.05)] transition">Ver solicitud</button>` : ""}
             </div>
           </div>
         `;
@@ -6678,6 +6968,14 @@
         </div>`;
       }
       if (mov.semana) html += row("Semana (cierre)", formatDateDisplay(mov.semana), "text-[var(--text-muted)]");
+      const solPend = solicitudPendienteDe(mov);
+      if (solPend) {
+        html += `<div class="sol-aviso-detalle">
+          <div class="sol-motivo-label">Borrado pendiente · sigue contando</div>
+          <p>${esc(solPend.motivo)}</p>
+          <div class="sol-meta">Solicitó ${esc(solPend.solicito || "—")}</div>
+        </div>`;
+      }
 
       document.getElementById("mov-detail-body").innerHTML = html;
 
@@ -6688,6 +6986,11 @@
       }
       if (puedeBorrarMovimiento(mov)) {
         footer += `<button type="button" onclick="cerrarDetalleMovimiento(); borrarMovimiento('${String(mid).replace(/'/g, "\\'")}')" class="btn-ghost py-2.5 px-3 rounded-lg text-[#e08888]">Eliminar</button>`;
+      }
+      if (puedeSolicitarBorrado(mov)) {
+        footer += `<button type="button" onclick='cerrarDetalleMovimiento(); solicitarBorrado(${jsArg(mid)})' class="btn-ghost py-2.5 px-3 rounded-lg text-[#e08888]">Borrar</button>`;
+      } else if (solPend) {
+        footer += `<button type="button" onclick='verSolicitudDeMovimiento(${jsArg(mid)})' class="btn-outline py-2.5 px-3 rounded-lg">Ver solicitud</button>`;
       }
       document.getElementById("mov-detail-footer").innerHTML = footer;
       document.getElementById("mov-detail-overlay").classList.remove("hidden");
@@ -7179,6 +7482,8 @@
       }
     }
 
+  </script>
+  <script>
     // =====================================================
     // EMPLEADOS
     // =====================================================
@@ -7405,6 +7710,620 @@
       }
     }
 
+  </script>
+  <script>
+    // =====================================================
+    // SOLICITUDES DE BORRADO
+    // =====================================================
+    // Los empleados no borran movimientos: piden el borrado con un motivo y un admin
+    // lo aprueba o lo rechaza. Todo queda registrado en la tabla `movimientos` como
+    // filas de monto 0 con empleado "Solicitud" (igual que las marcas "CuotaOmitida"),
+    // así no hace falta crear tablas nuevas y llega en tiempo real a todos:
+    //   SolicitudBorrado   → la solicitud. notas = JSON { mid, motivo, mov } (mov = copia del movimiento)
+    //   SolicitudCancelada → el empleado la retiró.           notas = JSON { sol, motivo }
+    //   SolicitudRechazada → un admin la rechazó.              notas = JSON { sol }
+    //   SolicitudAprobada  → un admin la aprobó y borró el movimiento. notas = JSON { sol }
+    // Al cargar, estas filas se separan de `movimientos` (separarSolicitudes), por lo que
+    // no cuentan en sueldos, totales, historial ni copias por día. Mientras una solicitud
+    // está pendiente el movimiento sigue contando normal; deja de contar solo al aprobarse.
+    const SOL_TIPO = {
+      SOLICITUD: "SolicitudBorrado",
+      CANCELADA: "SolicitudCancelada",
+      RECHAZADA: "SolicitudRechazada",
+      APROBADA: "SolicitudAprobada"
+    };
+    const SOL_TIPOS = new Set(Object.values(SOL_TIPO));
+    const SOL_EMPLEADO = "Solicitud";
+    const SOL_HISTORIAL_PASO = 30;
+    const SOL_ETIQUETA_ESTADO = {
+      pendiente: "Pendiente",
+      aprobada: "Borrado aprobado",
+      rechazada: "Rechazada",
+      cancelada: "Cancelada",
+      sin_efecto: "Movimiento ya eliminado"
+    };
+
+    let solicitudesRegistros = [];
+    let _solCache = null;
+    let _solPendientesVistas = null;   // ids pendientes ya vistos, para avisar a los admins de las nuevas
+    let _solEntradaLista = false;      // ya cargaron los datos al entrar (antes de eso no se avisa de "nuevas")
+    let _solHistorialVisibles = SOL_HISTORIAL_PASO;
+    const _solHistorialAbiertas = new Set();
+    const _solTituloBase = document.title;
+
+    function esRegistroSolicitud(m) {
+      return !!m && SOL_TIPOS.has(String(m.tipo || "").trim());
+    }
+
+    /** Guarda aparte las filas de solicitudes y devuelve solo los movimientos normales. */
+    function separarSolicitudes(lista) {
+      const normales = [];
+      const registros = [];
+      (lista || []).forEach(m => (esRegistroSolicitud(m) ? registros : normales).push(m));
+      solicitudesRegistros = registros;
+      _solCache = null;
+      return normales;
+    }
+
+    function _solDatos(r) {
+      try { return JSON.parse(r && r.notas ? r.notas : "{}") || {}; } catch (_) { return {}; }
+    }
+
+    function _solIdMov(m) {
+      return String(m && (m.id != null ? m.id : m.row));
+    }
+
+    function _solOrden(a, b) {
+      const na = Number(a.id) || 0, nb = Number(b.id) || 0;
+      if (na !== nb) return na - nb;
+      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    }
+
+    /** Copia de lo que se ve de un movimiento (se guarda en la solicitud por si luego se borra). */
+    function _copiaMovimiento(m) {
+      const miembros = miembrosMovimiento(m);
+      const esGrupo = miembros.length > 1 || m.empleado === "Grupo";
+      const unit = Number(m.monto) || 0;
+      return {
+        tipo: m.tipo || "",
+        monto: unit,
+        total: esGrupo ? Math.round(unit * Math.max(miembros.length, 1) * 100) / 100 : unit,
+        personas: esGrupo ? miembros.length : 1,
+        empleado: etiquetaEmpleadosMov(m),
+        fecha: m.fecha || "",
+        semana: m.semana || "",
+        responsable: m.responsable || "",
+        nota: notasVisibles(m.notas),
+        metodo: parseMetodoFromNotas(m.notas)
+      };
+    }
+
+    /**
+     * Estado de todas las solicitudes, calculado a partir de los registros.
+     * Se recalcula solo cuando cambian `movimientos` o los registros.
+     */
+    function resumenSolicitudes() {
+      if (_solCache && _solCache.movs === movimientos && _solCache.regs === solicitudesRegistros) {
+        return _solCache.res;
+      }
+      const movPorId = new Map();
+      (movimientos || []).forEach(m => movPorId.set(_solIdMov(m), m));
+
+      const ordenados = solicitudesRegistros.slice().sort(_solOrden);
+      const cierres = new Map();
+      ordenados.forEach(r => {
+        if (r.tipo === SOL_TIPO.SOLICITUD) return;
+        const d = _solDatos(r);
+        const sid = String(d.sol || "");
+        if (sid && !cierres.has(sid)) cierres.set(sid, { r, d });
+      });
+
+      const lista = [];
+      const porMov = new Map();
+      ordenados.forEach(r => {
+        if (r.tipo !== SOL_TIPO.SOLICITUD) return;
+        const d = _solDatos(r);
+        const id = _solIdMov(r);
+        const mid = String(d.mid || "");
+        const mov = movPorId.get(mid) || null;
+        const cierre = cierres.get(id) || null;
+        let estado = "pendiente";
+        if (cierre) {
+          estado = cierre.r.tipo === SOL_TIPO.APROBADA ? "aprobada"
+            : cierre.r.tipo === SOL_TIPO.RECHAZADA ? "rechazada" : "cancelada";
+        } else if (!mov) {
+          estado = "sin_efecto";
+        }
+        // Solo una solicitud pendiente por movimiento (la primera); las repetidas no cuentan
+        if (estado === "pendiente" && porMov.has(mid)) return;
+        const s = {
+          id, mid, mov, estado,
+          copia: d.mov || {},
+          motivo: String(d.motivo || ""),
+          solicito: r.responsable || "",
+          fecha: r.created_at || r.fecha || "",
+          cierre: cierre ? {
+            tipo: cierre.r.tipo,
+            motivo: String(cierre.d.motivo || ""),
+            por: cierre.r.responsable || "",
+            fecha: cierre.r.created_at || cierre.r.fecha || ""
+          } : null
+        };
+        lista.push(s);
+        if (estado === "pendiente") porMov.set(mid, s);
+      });
+      lista.reverse(); // más reciente primero
+
+      const res = {
+        lista,
+        pendientes: lista.filter(s => s.estado === "pendiente"),
+        cerradas: lista.filter(s => s.estado !== "pendiente"),
+        porMov
+      };
+      _solCache = { movs: movimientos, regs: solicitudesRegistros, res };
+      return res;
+    }
+
+    function solicitudPendienteDe(m) {
+      if (!m) return null;
+      return resumenSolicitudes().porMov.get(_solIdMov(m)) || null;
+    }
+
+    function puedeSolicitarBorrado(m) {
+      return !!(currentUser && m && currentUser.rol !== "admin" && !solicitudPendienteDe(m));
+    }
+
+    /** Clase y etiqueta para mostrar un movimiento con borrado pendiente (sigue contando). */
+    function claseBorradoPendiente(m) {
+      return solicitudPendienteDe(m) ? " mov-borrado-pendiente" : "";
+    }
+    function badgeBorradoPendiente(m) {
+      return solicitudPendienteDe(m)
+        ? `<span class="sol-badge-mov" title="Sigue contando hasta que un admin apruebe el borrado">Borrado pendiente</span>`
+        : "";
+    }
+
+    function _solBuscarMov(rowId) {
+      return (movimientos || []).find(m => String(m.id) === String(rowId) || String(m.row) === String(rowId)) || null;
+    }
+    function _solBuscar(solId) {
+      return resumenSolicitudes().lista.find(s => s.id === String(solId)) || null;
+    }
+
+    function _solMonto(c) {
+      const total = formatMoney(c.total != null ? c.total : c.monto);
+      return c.personas > 1 ? `${total} <span class="text-[11px] text-[var(--text-muted)]">(${formatMoney(c.monto)} c/u)</span>` : total;
+    }
+    function _solMontoTexto(c) {
+      return formatMoney(c.total != null ? c.total : c.monto);
+    }
+    function _solDatosVista(s) {
+      return s.mov ? _copiaMovimiento(s.mov) : (s.copia || {});
+    }
+
+    function _solResumenMovHtml(c) {
+      const linea2 = [formatDateDisplay(c.fecha), c.metodo, c.responsable ? "Registró " + c.responsable : ""].filter(Boolean).map(esc).join(" · ");
+      return `
+        <div class="sol-mov">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold text-white text-[14px]">${esc(c.empleado || "—")}</span>
+                <span class="sol-tipo">${esc(c.tipo || "")}</span>
+              </div>
+              <div class="text-[12.5px] text-[var(--text-muted)] mt-1">${linea2}</div>
+              ${c.nota ? `<div class="text-[12.5px] text-[var(--text-dim)] mt-0.5 break-words">${esc(c.nota)}</div>` : ""}
+            </div>
+            <div class="font-semibold text-white tabular-nums text-right shrink-0">${_solMonto(c)}</div>
+          </div>
+        </div>`;
+    }
+
+    function _solTextoConfirmacion(c) {
+      return `${c.tipo} · ${_solMontoTexto(c)} · ${c.empleado}\n${formatDateDisplay(c.fecha)}${c.nota ? "\n" + c.nota : ""}`;
+    }
+
+    // ---------- Ventana para escribir el motivo ----------
+    let _motivoResolver = null;
+    function pedirMotivo({ titulo, resumenHtml, boton, placeholder }) {
+      if (_motivoResolver) _motivoResolver(null);
+      document.getElementById("motivo-titulo").textContent = titulo;
+      document.getElementById("motivo-resumen").innerHTML = resumenHtml || "";
+      const txt = document.getElementById("motivo-texto");
+      txt.value = "";
+      txt.placeholder = placeholder || "";
+      document.getElementById("motivo-error").classList.add("hidden");
+      document.getElementById("btn-motivo-ok").textContent = boton || "Enviar";
+      document.getElementById("motivo-overlay").classList.remove("hidden");
+      setTimeout(() => { try { txt.focus(); } catch (_) {} }, 80);
+      return new Promise(resolve => { _motivoResolver = resolve; });
+    }
+    function enviarMotivo() {
+      const txt = document.getElementById("motivo-texto");
+      const motivo = (txt.value || "").trim();
+      if (!motivo) {
+        document.getElementById("motivo-error").classList.remove("hidden");
+        txt.focus();
+        return;
+      }
+      const r = _motivoResolver;
+      _motivoResolver = null;
+      document.getElementById("motivo-overlay").classList.add("hidden");
+      if (r) r(motivo);
+    }
+    function cerrarMotivo() {
+      const r = _motivoResolver;
+      _motivoResolver = null;
+      document.getElementById("motivo-overlay").classList.add("hidden");
+      if (r) r(null);
+    }
+    document.getElementById("motivo-texto")?.addEventListener("input", () => {
+      document.getElementById("motivo-error").classList.add("hidden");
+    });
+
+    // ---------- Guardar registros ----------
+    async function _solGuardarRegistro(tipo, datos, auditoria) {
+      const hoy = localDateStr(new Date());
+      const row = {
+        fecha: hoy,
+        empleado: SOL_EMPLEADO,
+        tipo,
+        monto: 0,
+        notas: JSON.stringify(Object.assign({ v: 1 }, datos)),
+        semana: semanaDesdeFecha(hoy),
+        responsable: (currentUser && currentUser.usuario) || ""
+      };
+      const { data, error } = await sb.from("movimientos").insert([row]).select("*");
+      if (error) throw error;
+      const guardado = mapMovimiento((data && data[0]) || Object.assign({ id: "local-" + Date.now(), created_at: new Date().toISOString() }, row));
+      solicitudesRegistros = solicitudesRegistros.concat([guardado]);
+      _solCache = null;
+      try {
+        await logAuditoria(auditoria.operacion, {
+          id: guardado.id, fecha: row.fecha, tipo, monto: 0,
+          empleado: auditoria.empleado || "", notas: auditoria.notas || "", responsable: row.responsable
+        });
+      } catch (_) {}
+      return guardado;
+    }
+
+    function _solRefrescar() {
+      guardarCache();
+      aplicarDatosEnPantalla();
+    }
+
+    function _solError(err, texto) {
+      console.error(err);
+      showToast(`${texto}: ${(err && err.message) || "error de conexión"}`, "error");
+    }
+
+    // ---------- Acciones ----------
+    /** Empleado: pide borrar un movimiento. Admin: borra directo, como siempre. */
+    async function solicitarBorrado(rowId) {
+      if (!currentUser) return showToast("Inicia sesión", "error");
+      if (currentUser.rol === "admin") return borrarMovimiento(rowId);
+      const mov = _solBuscarMov(rowId);
+      if (!mov) return showToast("No se encontró el movimiento", "error");
+      if (solicitudPendienteDe(mov)) return showToast("Este movimiento ya tiene una solicitud pendiente", "info");
+      if (isSaving) return;
+      const copia = _copiaMovimiento(mov);
+      const motivo = await pedirMotivo({
+        titulo: "Solicitar borrado",
+        resumenHtml: _solResumenMovHtml(copia) + `<p class="text-[12px] text-[var(--text-muted)] mt-2">Un admin debe aprobarlo. Mientras tanto, el movimiento sigue contando.</p>`,
+        boton: "Enviar solicitud",
+        placeholder: "Ej. no se realizó el adelanto, regresó el dinero…"
+      });
+      if (motivo == null) return;
+      if (solicitudPendienteDe(mov)) return showToast("Este movimiento ya tiene una solicitud pendiente", "info");
+      isSaving = true;
+      try {
+        await _solGuardarRegistro(SOL_TIPO.SOLICITUD, { mid: _solIdMov(mov), motivo, mov: copia }, {
+          operacion: "SOLICITUD_BORRADO", empleado: copia.empleado, notas: motivo
+        });
+        _solRefrescar();
+        showToast("Solicitud enviada. Un admin la revisará");
+      } catch (err) {
+        _solError(err, "No se pudo enviar la solicitud");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    /** Quien la pidió la retira (con motivo). No necesita aprobación. */
+    async function cancelarSolicitud(solId) {
+      const s = _solBuscar(solId);
+      if (!s || s.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      if (!currentUser || s.solicito !== currentUser.usuario) return showToast("Solo quien la pidió puede cancelarla", "error");
+      if (isSaving) return;
+      const motivo = await pedirMotivo({
+        titulo: "Cancelar solicitud",
+        resumenHtml: _solResumenMovHtml(_solDatosVista(s)) + `<p class="text-[12px] text-[var(--text-muted)] mt-2">El movimiento se queda como está.</p>`,
+        boton: "Cancelar solicitud",
+        placeholder: "Ej. sí se va a hacer el adelanto"
+      });
+      if (motivo == null) return;
+      isSaving = true;
+      try {
+        await _solGuardarRegistro(SOL_TIPO.CANCELADA, { sol: s.id, motivo }, {
+          operacion: "SOLICITUD_CANCELADA", empleado: _solDatosVista(s).empleado, notas: motivo
+        });
+        _solRefrescar();
+        showToast("Solicitud cancelada");
+      } catch (err) {
+        _solError(err, "No se pudo cancelar");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    /** Admin: aprueba, borra el movimiento y deja registro. */
+    async function aprobarSolicitud(solId) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const s = _solBuscar(solId);
+      if (!s || s.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      if (isSaving) return;
+      const mov = s.mov;
+      const c = _copiaMovimiento(mov);
+      const ok = await uiConfirm(`¿Aprobar y borrar este movimiento?\n${_solTextoConfirmacion(c)}\n\nMotivo: ${s.motivo}\n\nDejará de contar en sueldos y totales. No se puede deshacer.`);
+      if (!ok) return;
+      const actual = _solBuscar(solId);
+      if (!actual || actual.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      isSaving = true;
+      try {
+        const id = mov.id || mov.row;
+        try {
+          await logAuditoria("DELETE", {
+            id, fecha: mov.fecha, tipo: mov.tipo, monto: mov.monto, empleado: mov.empleado,
+            notas: mov.notas, responsable: mov.responsable, semana: mov.semana
+          });
+        } catch (_) {}
+        const { error } = await sb.from("movimientos").delete().in("id", [Number(id) || id]);
+        if (error) throw error;
+        movimientos = movimientos.filter(m => String(m.id || m.row) !== String(id));
+        _solCache = null;
+        try {
+          await _solGuardarRegistro(SOL_TIPO.APROBADA, { sol: s.id }, {
+            operacion: "SOLICITUD_APROBADA", empleado: c.empleado, notas: s.motivo
+          });
+          showToast("Movimiento borrado");
+        } catch (err) {
+          // El movimiento ya se borró; la solicitud quedará como "Movimiento ya eliminado"
+          _solError(err, "Movimiento borrado, pero no se guardó el registro de aprobación");
+        }
+        _solRefrescar();
+      } catch (err) {
+        _solError(err, "No se pudo borrar el movimiento");
+        await cargarTodoOptimizado();
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    /** Admin: rechaza; el movimiento queda igual. */
+    async function rechazarSolicitud(solId) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const s = _solBuscar(solId);
+      if (!s || s.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      if (isSaving) return;
+      const c = _solDatosVista(s);
+      const ok = await uiConfirm(`¿Rechazar la solicitud?\n${_solTextoConfirmacion(c)}\n\nEl movimiento se queda como está.`);
+      if (!ok) return;
+      const actual = _solBuscar(solId);
+      if (!actual || actual.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      isSaving = true;
+      try {
+        await _solGuardarRegistro(SOL_TIPO.RECHAZADA, { sol: s.id }, {
+          operacion: "SOLICITUD_RECHAZADA", empleado: c.empleado, notas: s.motivo
+        });
+        _solRefrescar();
+        showToast("Solicitud rechazada");
+      } catch (err) {
+        _solError(err, "No se pudo rechazar");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    function verSolicitudDeMovimiento(rowId) {
+      const mov = _solBuscarMov(rowId);
+      const s = solicitudPendienteDe(mov);
+      if (typeof cerrarDetalleMovimiento === "function") cerrarDetalleMovimiento();
+      showTab("solicitudes");
+      if (!s) return;
+      setTimeout(() => {
+        const el = document.querySelector(`#solicitudes-pendientes [data-sol="${CSS.escape(s.id)}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    }
+
+    // ---------- Vista ----------
+    function _solTarjeta(s) {
+      const c = _solDatosVista(s);
+      const isAdmin = currentUser && currentUser.rol === "admin";
+      const esMia = currentUser && s.solicito === currentUser.usuario;
+      const sid = jsArg(s.id);
+      let acciones = "";
+      if (isAdmin) {
+        acciones = `
+          <div class="sol-acciones">
+            <button type="button" class="btn-ghost px-4 py-2 rounded-lg text-[13px]" onclick='rechazarSolicitud(${sid})'>Rechazar</button>
+            <button type="button" class="btn-danger px-4 py-2 rounded-lg text-[13px]" onclick='aprobarSolicitud(${sid})'>Aprobar borrado</button>
+          </div>`;
+      } else if (esMia) {
+        acciones = `
+          <div class="sol-acciones">
+            <button type="button" class="btn-ghost px-4 py-2 rounded-lg text-[13px]" onclick='cancelarSolicitud(${sid})'>Cancelar solicitud</button>
+          </div>`;
+      }
+      return `
+        <div class="sol-card card rounded-xl p-4" data-sol="${esc(s.id)}">
+          <div class="flex items-center justify-between gap-2 mb-2.5">
+            <span class="sol-estado sol-estado-pendiente">Pendiente</span>
+            <span class="text-[11px] text-[var(--text-dim)]">${esc(formatDateTimeDisplay(s.fecha))}</span>
+          </div>
+          ${_solResumenMovHtml(c)}
+          <div class="sol-motivo">
+            <div class="sol-motivo-label">Motivo del borrado</div>
+            <p>${esc(s.motivo)}</p>
+            <div class="sol-meta">Solicitó ${esc(s.solicito || "—")}</div>
+          </div>
+          ${acciones}
+        </div>`;
+    }
+
+    function _solFilaHistorial(s) {
+      const c = _solDatosVista(s);
+      const abierta = _solHistorialAbiertas.has(s.id);
+      let detalle = "";
+      if (abierta) {
+        const cierre = s.cierre;
+        const accion = !cierre ? "" :
+          cierre.tipo === SOL_TIPO.APROBADA ? "Aprobó" :
+          cierre.tipo === SOL_TIPO.RECHAZADA ? "Rechazó" : "Canceló";
+        detalle = `
+          <div class="sol-hist-detalle" onclick="event.stopPropagation()">
+            ${_solResumenMovHtml(c)}
+            <div class="sol-motivo">
+              <div class="sol-motivo-label">Motivo del borrado</div>
+              <p>${esc(s.motivo)}</p>
+              <div class="sol-meta">Solicitó ${esc(s.solicito || "—")} · ${esc(formatDateTimeDisplay(s.fecha))}</div>
+            </div>
+            ${cierre ? `
+              <div class="sol-motivo">
+                <div class="sol-motivo-label">${cierre.tipo === SOL_TIPO.CANCELADA ? "Motivo de la cancelación" : "Resolución"}</div>
+                ${cierre.motivo ? `<p>${esc(cierre.motivo)}</p>` : ""}
+                <div class="sol-meta">${accion} ${esc(cierre.por || "—")} · ${esc(formatDateTimeDisplay(cierre.fecha))}</div>
+              </div>` : `
+              <div class="sol-meta">El movimiento se borró fuera de esta solicitud.</div>`}
+          </div>`;
+      }
+      return `
+        <div class="sol-hist sol-${s.estado}${abierta ? " is-open" : ""}" role="button" tabindex="0" aria-expanded="${abierta}"
+             onclick='toggleSolicitudHistorial(${jsArg(s.id)})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();toggleSolicitudHistorial(${jsArg(s.id)})}'>
+          <span class="sol-esquina">${SOL_ETIQUETA_ESTADO[s.estado] || ""}</span>
+          <div class="sol-hist-linea"><span class="text-white font-medium">${esc(c.tipo || "")} · ${esc(_solMontoTexto(c))}</span> · ${esc(c.empleado || "—")}</div>
+          <div class="sol-hist-sub">${esc(formatDateDisplay(String(s.fecha).slice(0, 10)))} · Solicitó ${esc(s.solicito || "—")}</div>
+          ${detalle}
+        </div>`;
+    }
+
+    function toggleSolicitudHistorial(id) {
+      id = String(id);
+      if (_solHistorialAbiertas.has(id)) _solHistorialAbiertas.delete(id);
+      else _solHistorialAbiertas.add(id);
+      _solRenderHistorial();
+    }
+    function verMasSolicitudes() {
+      _solHistorialVisibles += SOL_HISTORIAL_PASO;
+      _solRenderHistorial();
+    }
+
+    function _solRenderHistorial() {
+      const cont = document.getElementById("solicitudes-historial");
+      const empty = document.getElementById("solicitudes-historial-empty");
+      if (!cont) return;
+      const { cerradas } = resumenSolicitudes();
+      if (!cerradas.length) {
+        cont.innerHTML = "";
+        if (empty) empty.classList.remove("hidden");
+        return;
+      }
+      if (empty) empty.classList.add("hidden");
+      const visibles = cerradas.slice(0, _solHistorialVisibles);
+      cont.innerHTML = visibles.map(_solFilaHistorial).join("") +
+        (cerradas.length > visibles.length
+          ? `<button type="button" class="btn-ghost w-full py-2.5 rounded-lg text-[13px]" onclick="verMasSolicitudes()">Mostrar más (${cerradas.length - visibles.length})</button>`
+          : "");
+    }
+
+    function renderSolicitudes() {
+      const { pendientes } = resumenSolicitudes();
+      const n = pendientes.length;
+      const isAdmin = currentUser && currentUser.rol === "admin";
+
+      // Indicadores: sobre del encabezado, menú lateral y pestaña
+      const badge = document.getElementById("solic-badge");
+      if (badge) {
+        const antes = badge.textContent;
+        badge.textContent = n > 99 ? "99+" : String(n);
+        badge.classList.toggle("hidden", n === 0);
+        if (n > 0 && antes !== badge.textContent) {
+          badge.classList.remove("bump");
+          void badge.offsetWidth;
+          badge.classList.add("bump");
+        }
+      }
+      document.getElementById("btn-solicitudes")?.classList.toggle("has-pending", n > 0);
+      const btnSol = document.getElementById("btn-solicitudes");
+      if (btnSol) btnSol.setAttribute("aria-label", n ? `Solicitudes de borrado: ${n} pendiente(s)` : "Solicitudes de borrado");
+      const dc = document.getElementById("drawer-solic-count");
+      if (dc) { dc.textContent = String(n); dc.classList.toggle("hidden", n === 0); }
+      const pc = document.getElementById("sol-pend-count");
+      if (pc) pc.textContent = n ? String(n) : "";
+      document.title = (isAdmin && n ? `(${n}) ` : "") + _solTituloBase;
+
+      // Aviso a admins cuando llega una solicitud nueva mientras usan la app
+      const ids = new Set(pendientes.map(s => s.id));
+      if (_solEntradaLista && _solPendientesVistas && isAdmin) {
+        const nuevas = pendientes.filter(s => !_solPendientesVistas.has(s.id) && s.solicito !== currentUser.usuario);
+        if (nuevas.length === 1) showToast(`Nueva solicitud de borrado de ${nuevas[0].solicito || "un empleado"}`, "info");
+        else if (nuevas.length > 1) showToast(`${nuevas.length} solicitudes de borrado nuevas`, "info");
+      }
+      if (currentUser) _solPendientesVistas = ids;
+
+      // Vista
+      const cont = document.getElementById("solicitudes-pendientes");
+      const empty = document.getElementById("solicitudes-pendientes-empty");
+      if (cont) {
+        cont.innerHTML = pendientes.map(_solTarjeta).join("");
+        if (empty) empty.classList.toggle("hidden", n > 0);
+      }
+      _solRenderHistorial();
+
+      // Ventana de pendientes (si está abierta)
+      const ov = document.getElementById("solic-overlay");
+      if (ov && !ov.classList.contains("hidden")) {
+        if (!n) {
+          ov.classList.add("hidden");
+        } else {
+          document.getElementById("solic-overlay-lista").innerHTML = pendientes.map(_solTarjeta).join("");
+          document.getElementById("solic-overlay-sub").textContent = `${n} por revisar`;
+        }
+      }
+    }
+
+    // ---------- Ventana de pendientes al entrar (admins) ----------
+    function abrirSolicitudesPendientes() {
+      const { pendientes } = resumenSolicitudes();
+      if (!pendientes.length) return showTab("solicitudes");
+      document.getElementById("solic-overlay-lista").innerHTML = pendientes.map(_solTarjeta).join("");
+      document.getElementById("solic-overlay-sub").textContent = `${pendientes.length} por revisar`;
+      document.getElementById("solic-overlay").classList.remove("hidden");
+    }
+    function cerrarSolicitudesPendientes() {
+      document.getElementById("solic-overlay")?.classList.add("hidden");
+    }
+    /** Se llama al entrar a la app, cuando ya cargaron los datos. */
+    function mostrarSolicitudesAlEntrar() {
+      const { pendientes } = resumenSolicitudes();
+      _solPendientesVistas = new Set(pendientes.map(s => s.id));
+      _solEntradaLista = true;
+      if (!currentUser || currentUser.rol !== "admin") return;
+      if (pendientes.length) abrirSolicitudesPendientes();
+    }
+
+    /** Al cerrar sesión: cerrar ventanas y olvidar lo visto. */
+    function reiniciarSolicitudes() {
+      cerrarSolicitudesPendientes();
+      cerrarMotivo();
+      _solPendientesVistas = null;
+      _solEntradaLista = false;
+      _solHistorialAbiertas.clear();
+      _solHistorialVisibles = SOL_HISTORIAL_PASO;
+      document.title = _solTituloBase;
+    }
+  </script>
+  <script>
     // =====================================================
     // INIT
     // =====================================================
@@ -7455,7 +8374,7 @@
     (function () {
       const DEMO = !!window.__demoBackend; // true solo en demo.html (datos locales)
       const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const TAB_ORDER = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const TAB_ORDER = ["dashboard", "nuevo", "historial", "solicitudes", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       const $ = (id) => document.getElementById(id);
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -7588,7 +8507,7 @@
         document.body.appendChild(g);
         setTimeout(() => g.remove(), 300);
       }
-      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay"];
+      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay", "solic-overlay", "motivo-overlay"];
       function watchOverlays() {
         OVERLAYS.forEach(id => {
           const el = $(id);
@@ -7814,10 +8733,12 @@
         const d = $("app-drawer");
         if (d && d.classList.contains("open")) return cerrarDrawer();
         const open = (id) => { const el = $(id); return el && !el.classList.contains("hidden"); };
+        if (open("motivo-overlay")) return cerrarMotivo();
         if (open("edit-mov-overlay")) return cerrarEditarMovimiento();
         if (open("mov-detail-overlay")) return cerrarDetalleMovimiento();
         if (open("sueldo-modal-overlay")) return cerrarSueldoModal();
         if (open("confirm-overlay")) return cerrarConfirmacion();
+        if (open("solic-overlay")) return cerrarSolicitudesPendientes();
       });
 
       // ---------- Onda al tocar ----------

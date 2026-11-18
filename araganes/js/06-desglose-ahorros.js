@@ -58,7 +58,7 @@
             return `
             <div class="flex flex-col gap-0.5 text-sm py-2 border-b border-gray-800">
               <div class="flex justify-between gap-2">
-                <span class="text-gray-300">${formatMovimientoCuando(m)} · <span class="text-white font-medium">${m.tipo}</span>${metodo ? ` · <span class="text-[#e0b83a]">${metodo}</span>` : ""}${resp}</span>
+                <span class="text-gray-300">${formatMovimientoCuando(m)} · <span class="text-white font-medium">${m.tipo}</span>${badgeBorradoPendiente(m)}${metodo ? ` · <span class="text-[#e0b83a]">${metodo}</span>` : ""}${resp}</span>
                 <span class="font-bold whitespace-nowrap ${esGasto(m.tipo) || m.tipo === "Adelanto" || m.tipo === "Ahorro" || m.tipo === "AhorroEspecial" || m.tipo === "Fiado" || m.tipo === "CuotaPrestamo" || m.tipo === "Penalizacion" || m.tipo === "Descuento" ? "text-[#e08888]" : "text-[#5ecf8f]"}">${formatMoney(montoParaEmpleado(m, emp))}</span>
               </div>
               ${nota ? `<div class="text-xs text-gray-400 truncate">${esc(nota)}</div>` : ""}

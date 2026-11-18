@@ -54,7 +54,7 @@
     }
 
     function puedeBorrarMovimiento(m) {
-      // Por ahora solo admin borra directo (empleados: flujo de solicitud pendiente de diseño)
+      // Solo admin borra directo; los empleados piden el borrado (ver 11-solicitudes.js)
       if (!currentUser || !m) return false;
       return currentUser.rol === "admin";
     }
@@ -102,6 +102,7 @@
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           empleados,
           movimientos,
+          solicitudes: solicitudesRegistros,
           sueldosPagadosDB,
           ts: Date.now()
         }));
@@ -115,7 +116,7 @@
         const data = JSON.parse(raw);
         if (!data || !data.ts) return false;
         empleados = data.empleados || [];
-        movimientos = data.movimientos || [];
+        movimientos = separarSolicitudes((data.movimientos || []).concat(data.solicitudes || []));
         if (data.sueldosPagadosDB) {
           sueldosPagadosDB = data.sueldosPagadosDB;
           sueldosPagadosCargados = true;
@@ -139,6 +140,7 @@
       if (typeof renderPrestamos === "function") renderPrestamos();
       if (typeof renderGastosNegocio === "function") renderGastosNegocio();
       if (typeof renderIngresosNegocio === "function") renderIngresosNegocio();
+      if (typeof renderSolicitudes === "function") renderSolicitudes();
     }
 
     async function cargarPerfil(userId) {
@@ -198,7 +200,7 @@
         }
 
         empleados = (empRes.data || []).map(mapEmpleado);
-        movimientos = (movRes.data || []).map(mapMovimiento);
+        movimientos = separarSolicitudes((movRes.data || []).map(mapMovimiento));
         guardarCache();
         aplicarDatosEnPantalla();
         setStatus("Actualizado " + new Date().toLocaleTimeString("es-MX", { timeZone: APP_TZ, hour: "2-digit", minute: "2-digit" }) + " · sync ON");
@@ -219,7 +221,7 @@
           fetchAllRows("sueldos_pagados", "semana,empleado")
         ]);
         if (!empRes.error) empleados = (empRes.data||[]).map(mapEmpleado);
-        if (!movRes.error) movimientos = (movRes.data||[]).map(mapMovimiento);
+        if (!movRes.error) movimientos = separarSolicitudes((movRes.data||[]).map(mapMovimiento));
         if (!sueldosRes.error) { sueldosPagadosDB = sueldosRes.data||[]; sueldosPagadosCargados=true; }
         guardarCache();
         aplicarDatosEnPantalla();
@@ -336,6 +338,7 @@
       stopInactivityWatcher();
       isLocked = false;
       currentUser = null;
+      if (typeof reiniciarSolicitudes === "function") reiniciarSolicitudes();
       try { sb.auth.signOut(); } catch (e) {}
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(ACTIVITY_KEY);

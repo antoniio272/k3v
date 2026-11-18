@@ -38,10 +38,11 @@
       if (empty) empty.classList.add("hidden");
       const isAdmin = currentUser && currentUser.rol === "admin";
       cont.innerHTML = lista.map(m => `
-        <div class="card rounded-xl p-4 flex items-start justify-between gap-3">
+        <div class="card rounded-xl p-4 flex items-start justify-between gap-3${claseBorradoPendiente(m)}">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="tabular-nums font-semibold text-white">${formatMoney(m.monto)}</span>
+              ${badgeBorradoPendiente(m)}
             </div>
             <div class="text-sm text-gray-400 mt-1.5">${formatMovimientoCuando(m)}${notasVisibles(m.notas) ? ` · ${esc(notasVisibles(m.notas))}` : ""}</div>
             ${m.responsable ? `<div class="text-[11px] text-gray-500 mt-1">Registró: <span class="text-gray-300">${esc(m.responsable)}</span></div>` : ""}
@@ -472,10 +473,11 @@
 
       const isAdmin = currentUser && currentUser.rol === "admin";
       cont.innerHTML = lista.map(m => `
-        <div class="card rounded-xl p-4 flex items-start justify-between gap-3">
+        <div class="card rounded-xl p-4 flex items-start justify-between gap-3${claseBorradoPendiente(m)}">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="tabular-nums font-semibold text-white">${formatMoney(m.monto)}</span>
+              ${badgeBorradoPendiente(m)}
             </div>
             <div class="text-sm text-gray-400 mt-1.5">
               ${formatMovimientoCuando(m)}${notasVisibles(m.notas) ? ` · ${esc(notasVisibles(m.notas))}` : ""}

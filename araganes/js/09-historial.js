@@ -336,12 +336,13 @@
           : `<span class="tabular-nums font-semibold text-[var(--text)]">${formatMoney(unit)}</span>`;
 
         return `
-          <div class="hist-card card rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer" onclick='abrirDetalleMovimiento("${escAttr(mid)}")' title="Ver detalle">
+          <div class="hist-card card rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer${claseBorradoPendiente(m)}" onclick='abrirDetalleMovimiento("${escAttr(mid)}")' title="Ver detalle">
             <div class="hist-bar" style="background:${barColor}"></div>
             <div class="flex-1 min-w-0 pl-1">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-white text-[14px]" title="${esc(etiquetaEmpleadosMov(m))}">${esc(etiquetaEmpleadosMov(m))}</span>
                 <span class="text-[11px] px-2 py-0.5 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] ${colorTipo} font-medium">${esc(m.tipo)}</span>
+                ${badgeBorradoPendiente(m)}
               </div>
               <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-[13px] text-[var(--text-muted)]">
                 ${montoHtml}
@@ -353,6 +354,8 @@
             <div class="flex flex-col gap-1 shrink-0" onclick="event.stopPropagation()">
               ${puedeEditarMovimiento(m) ? `<button type="button" onclick='abrirEditarMovimiento("${escAttr(mid)}")' class="text-aragan-yellow text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(201,162,39,0.1)] transition">Editar</button>` : ""}
               ${puedeBorrarMovimiento(m) ? `<button type="button" onclick='borrarMovimiento("${escAttr(mid)}")' class="text-[var(--text-dim)] hover:text-[#e08888] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(196,84,84,0.1)] transition">Eliminar</button>` : ""}
+              ${puedeSolicitarBorrado(m) ? `<button type="button" onclick='solicitarBorrado("${escAttr(mid)}")' class="text-[var(--text-dim)] hover:text-[#e08888] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(196,84,84,0.1)] transition">Borrar</button>` : ""}
+              ${solicitudPendienteDe(m) ? `<button type="button" onclick='verSolicitudDeMovimiento("${escAttr(mid)}")' class="text-[var(--text-muted)] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(255,255,255,0.05)] transition">Ver solicitud</button>` : ""}
             </div>
           </div>
         `;
@@ -417,6 +420,14 @@
         </div>`;
       }
       if (mov.semana) html += row("Semana (cierre)", formatDateDisplay(mov.semana), "text-[var(--text-muted)]");
+      const solPend = solicitudPendienteDe(mov);
+      if (solPend) {
+        html += `<div class="sol-aviso-detalle">
+          <div class="sol-motivo-label">Borrado pendiente · sigue contando</div>
+          <p>${esc(solPend.motivo)}</p>
+          <div class="sol-meta">Solicitó ${esc(solPend.solicito || "—")}</div>
+        </div>`;
+      }
 
       document.getElementById("mov-detail-body").innerHTML = html;
 
@@ -427,6 +438,11 @@
       }
       if (puedeBorrarMovimiento(mov)) {
         footer += `<button type="button" onclick="cerrarDetalleMovimiento(); borrarMovimiento('${String(mid).replace(/'/g, "\\'")}')" class="btn-ghost py-2.5 px-3 rounded-lg text-[#e08888]">Eliminar</button>`;
+      }
+      if (puedeSolicitarBorrado(mov)) {
+        footer += `<button type="button" onclick='cerrarDetalleMovimiento(); solicitarBorrado(${jsArg(mid)})' class="btn-ghost py-2.5 px-3 rounded-lg text-[#e08888]">Borrar</button>`;
+      } else if (solPend) {
+        footer += `<button type="button" onclick='verSolicitudDeMovimiento(${jsArg(mid)})' class="btn-outline py-2.5 px-3 rounded-lg">Ver solicitud</button>`;
       }
       document.getElementById("mov-detail-footer").innerHTML = footer;
       document.getElementById("mov-detail-overlay").classList.remove("hidden");

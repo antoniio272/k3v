@@ -6,7 +6,7 @@
     (function () {
       const DEMO = !!window.__demoBackend; // true solo en demo.html (datos locales)
       const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const TAB_ORDER = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const TAB_ORDER = ["dashboard", "nuevo", "historial", "solicitudes", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       const $ = (id) => document.getElementById(id);
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -139,7 +139,7 @@
         document.body.appendChild(g);
         setTimeout(() => g.remove(), 300);
       }
-      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay"];
+      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay", "solic-overlay", "motivo-overlay"];
       function watchOverlays() {
         OVERLAYS.forEach(id => {
           const el = $(id);
@@ -365,10 +365,12 @@
         const d = $("app-drawer");
         if (d && d.classList.contains("open")) return cerrarDrawer();
         const open = (id) => { const el = $(id); return el && !el.classList.contains("hidden"); };
+        if (open("motivo-overlay")) return cerrarMotivo();
         if (open("edit-mov-overlay")) return cerrarEditarMovimiento();
         if (open("mov-detail-overlay")) return cerrarDetalleMovimiento();
         if (open("sueldo-modal-overlay")) return cerrarSueldoModal();
         if (open("confirm-overlay")) return cerrarConfirmacion();
+        if (open("solic-overlay")) return cerrarSolicitudesPendientes();
       });
 
       // ---------- Onda al tocar ----------
