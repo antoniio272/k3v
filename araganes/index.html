@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/premium.css">
   <link rel="stylesheet" href="css/solicitudes.css">
+  <link rel="stylesheet" href="css/feriado-prestamos.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.50.0/dist/umd/supabase.js"></script>
 </head>
 <body class="min-h-screen font-sans">
@@ -160,7 +161,7 @@
               <div class="form-section-label">
                 <span class="title">Tipo de movimiento</span>
               </div>
-              <div id="tipos-container" class="grid grid-cols-3 gap-1.5">
+              <div id="tipos-container" class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                 <button type="button" onclick="setTipo('Bono')" id="tipo-Bono" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Bono</button>
                 <button type="button" onclick="setTipo('Extra')" id="tipo-Extra" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Extra</button>
                 <button type="button" onclick="setTipo('Adelanto')" id="tipo-Adelanto" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Adelanto</button>
@@ -170,6 +171,7 @@
                 <button type="button" onclick="setTipo('AhorroEspecial')" id="tipo-AhorroEspecial" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[12px] leading-tight">Ahorro esp.</button>
                 <button type="button" onclick="setTipo('Fiado')" id="tipo-Fiado" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Fiado 🍔</button>
                 <button type="button" onclick="setTipo('Penalizacion')" id="tipo-Penalizacion" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[12px] leading-tight">Penalización ⚠️</button>
+                <button type="button" onclick="setTipo('Feriado')" id="tipo-Feriado" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Feriado 📅</button>
               </div>
             </div>
           </div>
@@ -224,8 +226,22 @@
             </div>
           </div>
 
+          <!-- Día feriado: multiplicador en lugar de monto -->
+          <div id="feriado-box" class="form-section hidden">
+            <div class="form-section-label">
+              <span class="title">Pago total del día</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" id="feriado-x2" onclick="setMultiplicadorFeriado(2)" class="modo-btn py-2.5 rounded-lg text-[14px]">x2</button>
+              <button type="button" id="feriado-x3" onclick="setMultiplicadorFeriado(3)" class="modo-btn py-2.5 rounded-lg text-[14px]">x3</button>
+              <input type="number" id="feriado-otro" min="1.5" max="5" step="0.5" inputmode="decimal" placeholder="Otro" aria-label="Otro multiplicador" class="rounded-lg px-3 py-2.5 text-center" oninput="setMultiplicadorFeriado(this.value, true)" />
+            </div>
+            <p class="text-[12px] text-gray-500 mt-2">Sueldo diario = sueldo semanal ÷ 7. El día normal ya va en el sueldo: x2 suma 1 día, x3 suma 2.</p>
+            <div id="feriado-preview" class="feriado-preview"></div>
+          </div>
+
           <!-- Monto -->
-          <div class="form-section">
+          <div id="monto-box" class="form-section">
             <div class="form-section-label">
               <span class="title" id="label-monto">Monto por persona</span>
             </div>
@@ -309,6 +325,8 @@
             <option value="Ahorro">Ahorro</option>
             <option value="AhorroEspecial">Ahorro especial</option>
             <option value="Fiado">Fiado 🍔</option>
+            <option value="Feriado">Día feriado</option>
+            <option value="PagoPrestamo">Pago de préstamo</option>
           </select>
         </div>
 
@@ -754,6 +772,8 @@
           <option value="Descuento">Descuento</option>
           <option value="Penalizacion">Penalización</option>
           <option value="Fiado">Fiado 🍔</option>
+          <option value="Feriado">Día feriado</option>
+          <option value="PagoPrestamo">Pago de préstamo</option>
         </select>
       </div>
       <div id="edit-mov-modo-box" class="hidden">
@@ -882,6 +902,25 @@
     </div>
   </div>
 
+  <!-- ========== PRÉSTAMO: AMPLIAR / LIQUIDAR ========== -->
+  <div id="prest-overlay" class="fixed inset-0 z-[95] hidden flex items-center justify-center px-4" onclick="if(event.target===this) cerrarPrestamoAccion()">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-4">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 id="prest-titulo" class="text-base font-semibold text-white tracking-tight"></h3>
+          <p id="prest-sub" class="text-xs text-gray-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="cerrarPrestamoAccion()" class="text-gray-500 hover:text-white text-lg leading-none px-2" aria-label="Cerrar">×</button>
+      </div>
+      <div id="prest-cuerpo" class="space-y-3"></div>
+      <p id="prest-error" class="hidden text-[12px] text-[#e08888]"></p>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarPrestamoAccion()" class="btn-ghost flex-1 py-2.5 rounded-lg text-sm">Volver</button>
+        <button type="button" id="btn-prest-ok" onclick="confirmarPrestamoAccion()" class="btn-yellow flex-1 py-2.5 rounded-lg text-sm">Continuar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- TOAST -->
   <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-xl font-medium shadow-lg hidden z-50 transition-all"></div>
 
@@ -896,7 +935,8 @@
   <script src="js/09-historial.js"></script>
   <script src="js/10-empleados-usuarios.js"></script>
   <script src="js/11-solicitudes.js"></script>
-  <script src="js/12-arranque.js"></script>
-  <script src="js/13-interfaz-premium.js"></script>
+  <script src="js/12-feriado-prestamos.js"></script>
+  <script src="js/13-arranque.js"></script>
+  <script src="js/14-interfaz-premium.js"></script>
 </body>
 </html>

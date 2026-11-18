@@ -106,6 +106,7 @@
       const g = (tipo) => movSemana.filter(m => m.tipo === tipo).reduce((s, m) => s + montoParaEmpleado(m, emp.empleado), 0);
       const bonos = g("Bono");
       const extras = g("Extra");
+      const feriados = g("Feriado");
       const adelantos = g("Adelanto");
       const descuentos = movSemana.filter(m => esDescuentoEmpleado(m.tipo)).reduce((s, m) => s + montoParaEmpleado(m, emp.empleado), 0);
       const cuotasPrest = g("CuotaPrestamo");
@@ -117,10 +118,11 @@
       const fiados = g("Fiado");
       // Ahorro se resta (retenido); retiro de ahorro se suma (se entrega en el pago de la semana)
       // Nuevo préstamo se suma al sueldo de la semana (dinero entregado al empleado)
-      const total = emp.sueldoBase + bonos + extras + prestamosNuevos + retirosAhorro + retirosAhorroEsp
+      // Día feriado: solo el extra (el día normal ya va en el sueldo base)
+      const total = emp.sueldoBase + bonos + extras + feriados + prestamosNuevos + retirosAhorro + retirosAhorroEsp
         - adelantos - descuentos - cuotasPrest - ahorros - ahorroEsp - fiados;
       return {
-        bonos, extras, adelantos, descuentos, cuotasPrest, prestamosNuevos,
+        bonos, extras, feriados, adelantos, descuentos, cuotasPrest, prestamosNuevos,
         ahorros, ahorroEsp, retirosAhorro, retirosAhorroEsp, fiados, total
       };
     }
@@ -150,6 +152,7 @@
       html += row("Sueldo base", formatMoney(emp.sueldoBase));
       html += row("+ Bonos", formatMoney(d.bonos), "text-[#5ecf8f]");
       html += row("+ Extras", formatMoney(d.extras), "text-[#e0b83a]");
+      if (d.feriados) html += row("+ Día feriado", formatMoney(d.feriados), "text-[#e0b83a]");
       if (d.prestamosNuevos) html += row("+ Nuevo préstamo 💳", formatMoney(d.prestamosNuevos), "text-[#5ecf8f]");
       html += row("− Adelantos", formatMoney(d.adelantos), "text-[#e8b04a]");
       html += row("− Penalizaciones", formatMoney(d.descuentos), "text-[#e08888]");
@@ -280,6 +283,7 @@
 
       const movSemana = movimientosDeSemana(semanaStr);
 
+      let sumFeriados = 0;
       let sumBase = 0, sumBonos = 0, sumExtras = 0, sumAdel = 0, sumDesc = 0, sumPrestamos = 0, sumAhorro = 0, sumAhorroEsp = 0, sumFiados = 0, sumTotal = 0;
 
       const pagadosSem = getSueldosPagados(semanaStr);
@@ -294,6 +298,7 @@
           sumBase += emp.sueldoBase;
           sumBonos += bonos;
           sumExtras += extras;
+          sumFeriados += (d.feriados || 0);
           sumAdel += adelantos;
           sumDesc += descuentos;
           sumPrestamos += cuotasPrest;
@@ -320,6 +325,7 @@
               <div class="flex justify-between"><span>Sueldo base</span><span class="text-gray-300">${formatMoney(emp.sueldoBase)}</span></div>
               <div class="flex justify-between text-[#5ecf8f]"><span>+ Bonos</span><span>${formatMoney(bonos)}</span></div>
               <div class="flex justify-between text-[#e0b83a]"><span>+ Extras</span><span>${formatMoney(extras)}</span></div>
+              ${(d.feriados) ? `<div class="flex justify-between text-[#e0b83a]"><span>+ Día feriado</span><span>${formatMoney(d.feriados)}</span></div>` : ""}
               ${(d.prestamosNuevos) ? `<div class="flex justify-between text-[#5ecf8f]"><span>+ Nuevo préstamo 💳</span><span>${formatMoney(d.prestamosNuevos)}</span></div>` : ""}
               <div class="flex justify-between text-[#e8b04a]"><span>- Adelantos</span><span>${formatMoney(adelantos)}</span></div>
               <div class="flex justify-between text-[#e08888]"><span>- Penalizaciones</span><span>${formatMoney(descuentos)}</span></div>
@@ -374,8 +380,8 @@
             <div class="text-lg font-bold text-[#5ecf8f]">${formatMoney(sumBonos)}</div>
           </div>
           <div class="summary-pill fade-up fade-up-delay-1">
-            <div class="text-[11px] text-gray-500 uppercase tracking-wide">Extras</div>
-            <div class="text-lg font-bold text-[#e0b83a]">${formatMoney(sumExtras)}</div>
+            <div class="text-[11px] text-gray-500 uppercase tracking-wide">${sumFeriados ? "Extras y feriados" : "Extras"}</div>
+            <div class="text-lg font-bold text-[#e0b83a]">${formatMoney(sumExtras + sumFeriados)}</div>
           </div>
           <div class="summary-pill fade-up fade-up-delay-2">
             <div class="text-[11px] text-gray-500 uppercase tracking-wide">Adelantos</div>
@@ -422,6 +428,7 @@
         lineas.push(`Sueldo base: ${formatMoney(emp.sueldoBase)}`);
         if (d.bonos) lineas.push(`+ Bonos: ${formatMoney(d.bonos)}`);
         if (d.extras) lineas.push(`+ Extras: ${formatMoney(d.extras)}`);
+        if (d.feriados) lineas.push(`+ Día feriado: ${formatMoney(d.feriados)}`);
         if (d.prestamosNuevos) lineas.push(`+ Nuevo préstamo: ${formatMoney(d.prestamosNuevos)}`);
         if (d.adelantos) lineas.push(`− Adelantos: ${formatMoney(d.adelantos)}`);
         if (d.descuentos) lineas.push(`− Penalizaciones: ${formatMoney(d.descuentos)}`);
@@ -471,6 +478,7 @@
       lineas.push(`Sueldo base: ${formatMoney(emp.sueldoBase)}`);
       if (d.bonos) lineas.push(`+ Bonos: ${formatMoney(d.bonos)}`);
       if (d.extras) lineas.push(`+ Extras: ${formatMoney(d.extras)}`);
+      if (d.feriados) lineas.push(`+ Día feriado: ${formatMoney(d.feriados)}`);
       if (d.adelantos) lineas.push(`− Adelantos: ${formatMoney(d.adelantos)}`);
       if (d.descuentos) lineas.push(`− Penalizaciones: ${formatMoney(d.descuentos)}`);
       if (d.cuotasPrest) lineas.push(`− Abono Préstamo: ${formatMoney(d.cuotasPrest)}`);
@@ -493,6 +501,7 @@
           const montoNum = montoParaEmpleado(m, empName);
           const monto = formatMoney(montoNum);
           const tLow = String(m.tipo || "").trim().toLowerCase();
+          if (tLow === "pagoprestamo") return;
           // Prestamo: no listar aquí (sale una sola vez al final resaltado)
           if (tLow === "prestamo") {
             if (nota) notasPrestamo.push(nota);

@@ -1013,7 +1013,7 @@
     }
 
   </style>
-  <style id="premium-layer">
+  <style>
     /* =====================================================
        CAPA PREMIUM · interfaz, movimiento y navegación
        Concepto: caja fuerte nocturna — negro cálido, oro cepillado,
@@ -1538,7 +1538,7 @@
     textarea.ui-dialog-input { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; min-height: 180px; }
     .ui-dialog-actions { display: flex; gap: 8px; justify-content: flex-end; }
     .ui-dialog-actions button { padding: 10px 16px; border-radius: 10px; font-size: 13.5px; font-weight: 600; min-width: 96px; }
-    .btn-danger { background: linear-gradient(180deg, #d76565, #b54646); color: #fff; border: 1px solid rgba(255,160,160,0.25); box-shadow: 0 8px 22px -10px rgba(196,84,84,0.8); transition: transform .25s var(--ease-spring), filter .2s; }
+    .btn-danger { position: relative; overflow: hidden; background: linear-gradient(180deg, #d76565, #b54646); color: #fff; border: 1px solid rgba(255,160,160,0.25); box-shadow: 0 8px 22px -10px rgba(196,84,84,0.8); transition: transform .25s var(--ease-spring), filter .2s; }
     .btn-danger:hover { filter: brightness(1.08); transform: translateY(-1px); }
 
     /* ---- Toast ---- */
@@ -1761,6 +1761,281 @@
       body::before { animation: none; }
     }
   </style>
+  <style>
+    /* =====================================================
+       SOLICITUDES DE BORRADO
+       ===================================================== */
+
+    /* ---- Sobre en el encabezado ---- */
+    .solic-btn {
+      position: relative;
+      width: 38px; height: 38px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: color .25s, border-color .25s, background-color .25s, transform .25s var(--ease-spring);
+    }
+    .solic-btn:hover { color: var(--gold-bright); border-color: var(--gold-border); background: var(--gold-dim); }
+    .solic-btn:active { transform: scale(0.94); }
+    .solic-btn.has-pending { color: var(--gold-bright); border-color: var(--gold-border); }
+    .solic-badge {
+      position: absolute;
+      top: -6px; right: -6px;
+      min-width: 19px; height: 19px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--gold-grad);
+      color: #120e02;
+      font-size: 10.5px;
+      font-weight: 700;
+      line-height: 19px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      box-shadow: 0 0 0 2px var(--bg);
+    }
+    .solic-badge.bump { animation: solicBump .5s var(--ease-spring); }
+    @keyframes solicBump { 0% { transform: scale(0.4); } 60% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+    .drawer-count {
+      min-width: 22px; height: 20px;
+      padding: 0 6px;
+      border-radius: 999px;
+      background: var(--gold-grad);
+      color: #120e02;
+      font-size: 11px; font-weight: 700;
+      line-height: 20px; text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ---- Movimiento con borrado pendiente: sigue contando, se ve atenuado ---- */
+    .mov-borrado-pendiente {
+      opacity: 0.58;
+      border-style: dashed !important;
+      border-color: rgba(232, 176, 74, 0.45) !important;
+    }
+    .mov-borrado-pendiente:hover { opacity: 0.8; }
+    .sol-badge-mov {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .02em;
+      padding: 2px 7px;
+      border-radius: 6px;
+      color: #e8b04a;
+      background: rgba(212, 146, 10, 0.12);
+      border: 1px solid rgba(212, 146, 10, 0.35);
+      white-space: nowrap;
+      margin-left: 4px;
+    }
+
+    /* ---- Vista ---- */
+    .sol-seccion {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .sol-seccion-count:not(:empty) {
+      min-width: 20px; height: 18px; padding: 0 6px;
+      border-radius: 999px;
+      background: var(--gold-grad); color: #120e02;
+      font-size: 10.5px; line-height: 18px; text-align: center;
+      letter-spacing: 0;
+    }
+    /* El historial puede ser largo: no se anima al entrar a la vista (cuida memoria en iPhone) */
+    main > section.view-enter > .no-enter { animation: none; }
+
+    .sol-card { display: flex; flex-direction: column; gap: 12px; }
+    .sol-tipo {
+      font-size: 11px; font-weight: 500;
+      padding: 2px 8px;
+      border-radius: 6px;
+      color: var(--text-secondary);
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+    }
+    .sol-estado {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase;
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+    .sol-estado-pendiente { color: #e8b04a; background: rgba(212, 146, 10, 0.12); border: 1px solid rgba(212, 146, 10, 0.35); }
+
+    .sol-motivo, .sol-aviso-detalle {
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+    .sol-aviso-detalle { margin-top: 10px; background: rgba(212, 146, 10, 0.07); border-color: rgba(212, 146, 10, 0.3); }
+    .sol-motivo-label {
+      font-size: 10px; font-weight: 600;
+      letter-spacing: .08em; text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 4px;
+    }
+    .sol-aviso-detalle .sol-motivo-label { color: #e8b04a; }
+    .sol-motivo p, .sol-aviso-detalle p {
+      font-size: 13.5px;
+      line-height: 1.45;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .sol-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 6px; }
+    .sol-acciones { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+    .sol-acciones button { min-width: 120px; }
+    @media (max-width: 480px) { .sol-acciones button { flex: 1; min-width: 0; } }
+
+    /* ---- Historial de solicitudes: filas grises con estado en la esquina ---- */
+    .sol-hist {
+      position: relative;
+      padding: 11px 14px;
+      padding-right: 130px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      opacity: 0.72;
+      transition: opacity .25s, border-color .25s, background-color .25s;
+    }
+    .sol-hist:hover, .sol-hist:focus-visible { opacity: 1; border-color: var(--border-hover); }
+    .sol-hist.is-open { opacity: 1; padding-right: 14px; background: var(--bg-card-solid); border-color: var(--border); cursor: default; }
+    .sol-hist-linea { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sol-hist.is-open .sol-hist-linea { white-space: normal; padding-right: 120px; }
+    .sol-hist-sub { font-size: 11.5px; color: var(--text-dim); margin-top: 2px; }
+    .sol-esquina {
+      position: absolute;
+      top: 10px; right: 12px;
+      font-size: 9.5px; font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--text-dim);
+    }
+    .sol-aprobada .sol-esquina { color: #5ecf8f; }
+    .sol-rechazada .sol-esquina { color: #e08888; }
+    .sol-cancelada .sol-esquina, .sol-sin_efecto .sol-esquina { color: var(--text-dim); }
+    .sol-hist-detalle { margin-top: 12px; display: flex; flex-direction: column; gap: 10px; cursor: auto; }
+    .sol-hist-detalle .sol-mov { padding-top: 2px; }
+    @media (max-width: 480px) {
+      .sol-hist { padding-right: 14px; padding-top: 28px; }
+      .sol-hist.is-open .sol-hist-linea { padding-right: 0; }
+      .sol-esquina { top: 9px; left: 14px; right: auto; }
+    }
+
+    /* ---- Ventanas ---- */
+    #solic-overlay, #motivo-overlay {
+      background: rgba(3, 3, 4, 0.62);
+      backdrop-filter: blur(14px) saturate(0.9);
+      -webkit-backdrop-filter: blur(14px) saturate(0.9);
+    }
+    #solic-overlay:not(.hidden), #motivo-overlay:not(.hidden) { animation: fadeOverlay .35s var(--ease-out) both; }
+    .solic-card { max-height: 88vh; max-height: 88dvh; }
+    #solic-overlay-lista .sol-card { background-color: rgba(255, 255, 255, 0.025); }
+    #motivo-resumen .sol-mov {
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+      #solic-overlay, #motivo-overlay {
+        background: rgba(3, 3, 4, 0.86);
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+      }
+      .mov-borrado-pendiente:hover { opacity: 0.58; }
+      .sol-hist:hover { opacity: 0.72; }
+      .sol-hist.is-open:hover { opacity: 1; }
+    }
+  </style>
+  <style>
+    /* =====================================================
+       DÍA FERIADO Y ACCIONES DE PRÉSTAMO
+       ===================================================== */
+
+    /* ---- Vista previa del feriado ---- */
+    .feriado-preview { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+    .feriado-preview:empty { display: none; }
+    .feriado-fila {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+    .feriado-total { background: rgba(201, 162, 39, 0.08); border-color: var(--gold-border); color: var(--text-secondary); }
+    .feriado-vacio, .feriado-aviso { font-size: 12.5px; color: var(--text-muted); }
+    .feriado-aviso { color: #e08888; }
+    #feriado-otro { font-size: 14px; }
+
+    /* ---- Botones extra en la tarjeta de préstamo ---- */
+    .prest-acciones {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding-top: 10px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    /* ---- Ventana Ampliar / Liquidar ---- */
+    .prest-resumen {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .prest-resumen > div {
+      display: flex; flex-direction: column; gap: 2px;
+      padding: 9px 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+    }
+    .prest-resumen span { font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); }
+    .prest-resumen strong { font-size: 15px; font-variant-numeric: tabular-nums; color: var(--text); }
+    .prest-opciones { display: flex; flex-direction: column; gap: 8px; }
+    .prest-opcion {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.025);
+      cursor: pointer;
+      transition: border-color .2s, background-color .2s;
+    }
+    .prest-opcion:has(input:checked) { border-color: var(--gold); background: var(--gold-dim); }
+    .prest-opcion input { margin-top: 3px; accent-color: #c9a227; flex-shrink: 0; }
+    .prest-opcion span { display: flex; flex-direction: column; gap: 2px; }
+    .prest-opcion strong { font-size: 13.5px; color: var(--text); font-weight: 600; }
+    .prest-opcion small { font-size: 12px; color: var(--text-muted); }
+
+    #prest-overlay {
+      background: rgba(3, 3, 4, 0.62);
+      backdrop-filter: blur(14px) saturate(0.9);
+      -webkit-backdrop-filter: blur(14px) saturate(0.9);
+    }
+    #prest-overlay:not(.hidden) { animation: fadeOverlay .35s var(--ease-out) both; }
+
+    @media (hover: none) and (pointer: coarse) {
+      #prest-overlay { background: rgba(3, 3, 4, 0.86); backdrop-filter: none; -webkit-backdrop-filter: none; }
+      #feriado-otro { font-size: 16px !important; }
+    }
+  </style>
   <script>
     // =====================================================
     // MODO DEMO · Backend simulado (reemplaza a Supabase)
@@ -1834,6 +2109,7 @@
         // Préstamo con cuotas ya aplicadas
         const p = add(22, "Jorge Ramírez", "Prestamo", 3000, "Préstamo personal [cuota:500]", 11);
         add(14, "Jorge Ramírez", "CuotaPrestamo", 500, `Cuota préstamo semana ${semanaDe(diasAtras(14))} [pid:${p.id}]`, 12);
+        add(4, "María Fernanda Ruiz", "Prestamo", 1500, "Préstamo personal [cuota:500]", 11);
         add(7, "Jorge Ramírez", "CuotaPrestamo", 500, `Cuota préstamo semana ${semanaDe(diasAtras(7))} [pid:${p.id}]`, 12);
         // Semana pasada
         add(8, "Ana Lucía Torres", "Bono", 200, "Mejor servicio del fin de semana", 18);
@@ -2052,8 +2328,8 @@
         return client;
       }
 
-      const mainDB = makeDB("araganes_demo_db_v1", seedPrincipal);
-      const auditDB = makeDB("araganes_demo_auditoria_v1", () => ({ movimientos_auditoria: [], empleados_auditoria: [] }));
+      const mainDB = makeDB("araganes_demo_db_v2", seedPrincipal);
+      const auditDB = makeDB("araganes_demo_auditoria_v2", () => ({ movimientos_auditoria: [], empleados_auditoria: [] }));
 
       // Otra pestaña con el demo abierto → refrescar como si llegara un evento realtime
       window.addEventListener("storage", (e) => {
@@ -2138,6 +2414,10 @@
           </div>
         </div>
         <div class="flex items-center gap-3">
+          <button type="button" id="btn-solicitudes" class="solic-btn" onclick="showTab('solicitudes')" aria-label="Solicitudes de borrado" title="Solicitudes de borrado">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg>
+            <span id="solic-badge" class="solic-badge hidden">0</span>
+          </button>
           <span class="demo-pill" title="Datos locales de prueba"><span class="dot"></span>Demo</span>
           <div id="user-badge" class="user-chip text-xs"></div>
           <div id="status" class="text-[11px] text-[var(--text-dim)] hidden sm:block tabular-nums">Cargando...</div>
@@ -2152,6 +2432,7 @@
         <button type="button" onclick="showTab('dashboard')" id="tab-dashboard" class="tab-btn admin-only px-4 py-3 tab-active whitespace-nowrap">Dashboard</button>
         <button type="button" onclick="showTab('nuevo')" id="tab-nuevo" class="tab-btn px-4 py-3 whitespace-nowrap">Movimiento</button>
         <button type="button" onclick="showTab('historial')" id="tab-historial" class="tab-btn px-4 py-3 whitespace-nowrap">Historial</button>
+        <button type="button" onclick="showTab('solicitudes')" id="tab-solicitudes" class="tab-btn px-4 py-3 whitespace-nowrap">Solicitudes</button>
         <button type="button" onclick="showTab('individual')" id="tab-individual" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Desglose</button>
         <button type="button" onclick="showTab('ahorros')" id="tab-ahorros" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorros</button>
         <button type="button" onclick="showTab('ahorroespecial')" id="tab-ahorroespecial" class="tab-btn admin-only px-4 py-3 whitespace-nowrap">Ahorro esp.</button>
@@ -2231,7 +2512,7 @@
               <div class="form-section-label">
                 <span class="title">Tipo de movimiento</span>
               </div>
-              <div id="tipos-container" class="grid grid-cols-3 gap-1.5">
+              <div id="tipos-container" class="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                 <button type="button" onclick="setTipo('Bono')" id="tipo-Bono" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Bono</button>
                 <button type="button" onclick="setTipo('Extra')" id="tipo-Extra" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Extra</button>
                 <button type="button" onclick="setTipo('Adelanto')" id="tipo-Adelanto" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Adelanto</button>
@@ -2241,6 +2522,7 @@
                 <button type="button" onclick="setTipo('AhorroEspecial')" id="tipo-AhorroEspecial" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[12px] leading-tight">Ahorro esp.</button>
                 <button type="button" onclick="setTipo('Fiado')" id="tipo-Fiado" class="tipo-btn py-2 px-2 rounded-lg text-[13px]">Fiado 🍔</button>
                 <button type="button" onclick="setTipo('Penalizacion')" id="tipo-Penalizacion" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[12px] leading-tight">Penalización ⚠️</button>
+                <button type="button" onclick="setTipo('Feriado')" id="tipo-Feriado" class="tipo-btn admin-only py-2 px-2 rounded-lg text-[13px]">Feriado 📅</button>
               </div>
             </div>
           </div>
@@ -2295,8 +2577,22 @@
             </div>
           </div>
 
+          <!-- Día feriado: multiplicador en lugar de monto -->
+          <div id="feriado-box" class="form-section hidden">
+            <div class="form-section-label">
+              <span class="title">Pago total del día</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" id="feriado-x2" onclick="setMultiplicadorFeriado(2)" class="modo-btn py-2.5 rounded-lg text-[14px]">x2</button>
+              <button type="button" id="feriado-x3" onclick="setMultiplicadorFeriado(3)" class="modo-btn py-2.5 rounded-lg text-[14px]">x3</button>
+              <input type="number" id="feriado-otro" min="1.5" max="5" step="0.5" inputmode="decimal" placeholder="Otro" aria-label="Otro multiplicador" class="rounded-lg px-3 py-2.5 text-center" oninput="setMultiplicadorFeriado(this.value, true)" />
+            </div>
+            <p class="text-[12px] text-gray-500 mt-2">Sueldo diario = sueldo semanal ÷ 7. El día normal ya va en el sueldo: x2 suma 1 día, x3 suma 2.</p>
+            <div id="feriado-preview" class="feriado-preview"></div>
+          </div>
+
           <!-- Monto -->
-          <div class="form-section">
+          <div id="monto-box" class="form-section">
             <div class="form-section-label">
               <span class="title" id="label-monto">Monto por persona</span>
             </div>
@@ -2380,6 +2676,8 @@
             <option value="Ahorro">Ahorro</option>
             <option value="AhorroEspecial">Ahorro especial</option>
             <option value="Fiado">Fiado 🍔</option>
+            <option value="Feriado">Día feriado</option>
+            <option value="PagoPrestamo">Pago de préstamo</option>
           </select>
         </div>
 
@@ -2600,6 +2898,27 @@
         </div>
       </section>
 
+      <!-- ========== SOLICITUDES DE BORRADO (todos) ========== -->
+      <section id="view-solicitudes" class="hidden space-y-6">
+        <div>
+          <h2 class="page-title">Solicitudes</h2>
+          <p class="text-sm text-gray-400 mt-0.5">El movimiento sigue contando hasta que un admin apruebe el borrado.</p>
+        </div>
+        <div>
+          <h3 class="sol-seccion">Pendientes <span id="sol-pend-count" class="sol-seccion-count"></span></h3>
+          <div id="solicitudes-pendientes" class="stagger-list space-y-3"></div>
+          <div id="solicitudes-pendientes-empty" class="hidden empty-state">
+            <div class="empty-icon">✓</div>
+            <p class="font-medium text-gray-400">Sin solicitudes pendientes</p>
+          </div>
+        </div>
+        <div class="no-enter">
+          <h3 class="sol-seccion">Historial de solicitudes</h3>
+          <div id="solicitudes-historial" class="space-y-2"></div>
+          <p id="solicitudes-historial-empty" class="hidden text-sm text-gray-500 py-4">Todavía no hay solicitudes cerradas.</p>
+        </div>
+      </section>
+
       <!-- ========== EMPLEADOS (solo admin) ========== -->
 
       <section id="view-empleados" class="hidden space-y-6 admin-only">
@@ -2633,6 +2952,7 @@
       <section id="view-usuarios" class="hidden space-y-6 admin-only">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <h2 class="page-title">Usuarios</h2>
+          <p class="text-xs text-gray-500">Altas en Supabase → Authentication</p>
         </div>
         <div id="form-usuario" class="hidden card rounded-xl p-5 space-y-4">
           <h3 class="font-bold text-lg">Nuevo usuario</h3>
@@ -2690,6 +3010,11 @@
       <button type="button" class="drawer-item" data-tab="historial" onclick="navegarDrawer('historial')">
         <span class="di-icon">☰</span>
         <span class="di-label">Historial</span>
+      </button>
+      <button type="button" class="drawer-item" data-tab="solicitudes" onclick="navegarDrawer('solicitudes')">
+        <span class="di-icon"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="M3.5 7l8.5 6 8.5-6"/></svg></span>
+        <span class="di-label">Solicitudes</span>
+        <span id="drawer-solic-count" class="drawer-count hidden">0</span>
       </button>
 
       <div class="drawer-section admin-only">Ahorros</div>
@@ -2802,6 +3127,8 @@
           <option value="Descuento">Descuento</option>
           <option value="Penalizacion">Penalización</option>
           <option value="Fiado">Fiado 🍔</option>
+          <option value="Feriado">Día feriado</option>
+          <option value="PagoPrestamo">Pago de préstamo</option>
         </select>
       </div>
       <div id="edit-mov-modo-box" class="hidden">
@@ -2892,6 +3219,60 @@
         Cambiar de perfil
       </button>
       <p id="lock-error" class="text-sm text-[#e08888] hidden"></p>
+    </div>
+  </div>
+
+  <!-- ========== SOLICITUDES PENDIENTES (al entrar, admins) ========== -->
+  <div id="solic-overlay" class="fixed inset-0 z-[94] hidden flex items-center justify-center px-4" onclick="if(event.target===this) cerrarSolicitudesPendientes()">
+    <div class="confirm-card solic-card rounded-xl p-5 w-full max-w-lg flex flex-col gap-3">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 class="text-base font-semibold text-white tracking-tight">Solicitudes pendientes</h3>
+          <p id="solic-overlay-sub" class="text-xs text-gray-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="cerrarSolicitudesPendientes()" class="text-gray-500 hover:text-white text-lg leading-none px-2" aria-label="Cerrar">×</button>
+      </div>
+      <div id="solic-overlay-lista" class="space-y-3 overflow-y-auto scrollbar min-h-0"></div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarSolicitudesPendientes()" class="btn-ghost flex-1 py-2.5 rounded-lg text-sm">Revisar después</button>
+        <button type="button" onclick="cerrarSolicitudesPendientes(); showTab('solicitudes')" class="btn-outline flex-1 py-2.5 rounded-lg text-sm">Ver historial</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== MOTIVO (solicitar / cancelar borrado) ========== -->
+  <div id="motivo-overlay" class="fixed inset-0 z-[96] hidden flex items-center justify-center px-4" onclick="if(event.target===this) cerrarMotivo()">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-3">
+      <h3 id="motivo-titulo" class="text-base font-semibold text-white tracking-tight"></h3>
+      <div id="motivo-resumen"></div>
+      <div>
+        <label for="motivo-texto" class="block text-xs text-gray-500 mb-1">Motivo</label>
+        <textarea id="motivo-texto" rows="3" maxlength="300" class="w-full rounded-lg px-3 py-2 text-sm"></textarea>
+        <p id="motivo-error" class="hidden text-[12px] text-[#e08888] mt-1.5">Escribe el motivo para continuar.</p>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarMotivo()" class="btn-ghost flex-1 py-2.5 rounded-lg">Volver</button>
+        <button type="button" id="btn-motivo-ok" onclick="enviarMotivo()" class="btn-yellow flex-1 py-2.5 rounded-lg">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== PRÉSTAMO: AMPLIAR / LIQUIDAR ========== -->
+  <div id="prest-overlay" class="fixed inset-0 z-[95] hidden flex items-center justify-center px-4" onclick="if(event.target===this) cerrarPrestamoAccion()">
+    <div class="confirm-card rounded-xl p-5 w-full max-w-md space-y-4">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h3 id="prest-titulo" class="text-base font-semibold text-white tracking-tight"></h3>
+          <p id="prest-sub" class="text-xs text-gray-500 mt-0.5"></p>
+        </div>
+        <button type="button" onclick="cerrarPrestamoAccion()" class="text-gray-500 hover:text-white text-lg leading-none px-2" aria-label="Cerrar">×</button>
+      </div>
+      <div id="prest-cuerpo" class="space-y-3"></div>
+      <p id="prest-error" class="hidden text-[12px] text-[#e08888]"></p>
+      <div class="flex gap-2 pt-1">
+        <button type="button" onclick="cerrarPrestamoAccion()" class="btn-ghost flex-1 py-2.5 rounded-lg text-sm">Volver</button>
+        <button type="button" id="btn-prest-ok" onclick="confirmarPrestamoAccion()" class="btn-yellow flex-1 py-2.5 rounded-lg text-sm">Continuar</button>
+      </div>
     </div>
   </div>
 
@@ -3048,6 +3429,8 @@
     }
 
 
+  </script>
+  <script>
     // Zona horaria: Ciudad Victoria, Tamaulipas / Monterrey (Centro de México, UTC-6)
     const APP_TZ = "America/Monterrey";
 
@@ -3223,7 +3606,9 @@
         AhorroEspecial: "⭐",
         RetiroAhorro: "🐷💸",
         RetiroAhorroEspecial: "⭐💸",
-        Fiado: "🍔"
+        Fiado: "🍔",
+        Feriado: "📅",
+        PagoPrestamo: "💳✓"
       };
       return icons[tipo] || "•";
     }
@@ -3394,13 +3779,17 @@
      */
     function resumenPrestamos() {
       const prestamosMov = [];
+      const ampliacionesMov = [];
       const cuotasMov = [];
+      const pagosFueraMov = [];
       (movimientos || []).forEach(m => {
         const t = String(m.tipo || "").trim();
         const emp = String(m.empleado || "").trim();
         if (!emp || emp === "Negocio" || emp === "Grupo") return;
-        if (t === "Prestamo") prestamosMov.push(m);
+        // Un "Prestamo" con [pid:X] es una ampliación del préstamo X (no un préstamo nuevo)
+        if (t === "Prestamo") (parsePrestamoIdFromNotas(m.notas) ? ampliacionesMov : prestamosMov).push(m);
         else if (t === "CuotaPrestamo") cuotasMov.push(m);
+        else if (t === "PagoPrestamo") pagosFueraMov.push(m);
       });
 
       prestamosMov.sort((a, b) => {
@@ -3420,6 +3809,8 @@
           pagado: 0,
           cuota: c > 0 ? c : 500,
           cuotas: [],
+          ampliaciones: [],
+          prestadoInicial: Number(p.monto) || 0,
           prestamo: p,
           fecha: String(p.fecha || "").slice(0, 10),
           notas: p.notas || "",
@@ -3428,6 +3819,23 @@
       });
       const byId = {};
       loans.forEach(l => { byId[l.prestamoId] = l; });
+
+      ampliacionesMov.forEach(a => {
+        const l = byId[parsePrestamoIdFromNotas(a.notas)];
+        if (!l) return; // préstamo original ya no existe: la ampliación no forma deuda aparte
+        l.prestado += Number(a.monto) || 0;
+        l.ampliaciones.push(a);
+      });
+
+      // Pagos por fuera del sueldo (efectivo/transferencia): bajan el saldo, no tocan la nómina
+      pagosFueraMov.forEach(c => {
+        const l = byId[parsePrestamoIdFromNotas(c.notas)];
+        if (!l) return;
+        l.pagado += Number(c.monto) || 0;
+        l.cuotas.push(Object.assign({}, c, { _pagoFuera: true }));
+        const f = String(c.fecha || "").slice(0, 10);
+        if (f && f > l.ultimaFecha) l.ultimaFecha = f;
+      });
 
       const unlinked = [];
       cuotasMov.forEach(c => {
@@ -3636,6 +4044,8 @@
       return true;
     }
 
+  </script>
+  <script>
     const CACHE_KEY = "demo_sueldos_cache_v3";
     const CACHE_MAX_AGE_MS = 5 * 60 * 1000;
     const USER_KEY = "demo_sueldos_user";
@@ -3692,7 +4102,7 @@
     }
 
     function puedeBorrarMovimiento(m) {
-      // Por ahora solo admin borra directo (empleados: flujo de solicitud pendiente de diseño)
+      // Solo admin borra directo; los empleados piden el borrado (ver 11-solicitudes.js)
       if (!currentUser || !m) return false;
       return currentUser.rol === "admin";
     }
@@ -3740,6 +4150,7 @@
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           empleados,
           movimientos,
+          solicitudes: solicitudesRegistros,
           sueldosPagadosDB,
           ts: Date.now()
         }));
@@ -3753,7 +4164,7 @@
         const data = JSON.parse(raw);
         if (!data || !data.ts) return false;
         empleados = data.empleados || [];
-        movimientos = data.movimientos || [];
+        movimientos = separarSolicitudes((data.movimientos || []).concat(data.solicitudes || []));
         if (data.sueldosPagadosDB) {
           sueldosPagadosDB = data.sueldosPagadosDB;
           sueldosPagadosCargados = true;
@@ -3777,6 +4188,7 @@
       if (typeof renderPrestamos === "function") renderPrestamos();
       if (typeof renderGastosNegocio === "function") renderGastosNegocio();
       if (typeof renderIngresosNegocio === "function") renderIngresosNegocio();
+      if (typeof renderSolicitudes === "function") renderSolicitudes();
     }
 
     async function cargarPerfil(userId) {
@@ -3836,7 +4248,7 @@
         }
 
         empleados = (empRes.data || []).map(mapEmpleado);
-        movimientos = (movRes.data || []).map(mapMovimiento);
+        movimientos = separarSolicitudes((movRes.data || []).map(mapMovimiento));
         guardarCache();
         aplicarDatosEnPantalla();
         setStatus("Actualizado " + new Date().toLocaleTimeString("es-MX", { timeZone: APP_TZ, hour: "2-digit", minute: "2-digit" }) + " · sync ON");
@@ -3857,7 +4269,7 @@
           fetchAllRows("sueldos_pagados", "semana,empleado")
         ]);
         if (!empRes.error) empleados = (empRes.data||[]).map(mapEmpleado);
-        if (!movRes.error) movimientos = (movRes.data||[]).map(mapMovimiento);
+        if (!movRes.error) movimientos = separarSolicitudes((movRes.data||[]).map(mapMovimiento));
         if (!sueldosRes.error) { sueldosPagadosDB = sueldosRes.data||[]; sueldosPagadosCargados=true; }
         guardarCache();
         aplicarDatosEnPantalla();
@@ -3974,6 +4386,7 @@
       stopInactivityWatcher();
       isLocked = false;
       currentUser = null;
+      if (typeof reiniciarSolicitudes === "function") reiniciarSolicitudes();
       try { sb.auth.signOut(); } catch (e) {}
       localStorage.removeItem(USER_KEY);
       localStorage.removeItem(ACTIVITY_KEY);
@@ -4145,11 +4558,15 @@
             <option value="Ahorro">Ahorro</option>
             <option value="AhorroEspecial">Ahorro especial</option>
             <option value="Fiado">Fiado 🍔</option>
+            <option value="Feriado">Día feriado</option>
+            <option value="PagoPrestamo">Pago de préstamo</option>
           `;
         }
       }
     }
 
+  </script>
+  <script>
     // =====================================================
     // LIMPIEZA AUTOMÁTICA DE MOVIMIENTOS ANTIGUOS
     // =====================================================
@@ -4188,12 +4605,13 @@
           if (TIPOS_NO_PURGABLES.has(m.tipo)) return false;
           const f = soloDia(m.fecha);
           if (!f || f >= cutoffStr) return false;
-          if (m.tipo === "CuotaPrestamo") {
+          if (m.tipo === "CuotaPrestamo" || m.tipo === "PagoPrestamo") {
             const pid = parsePrestamoIdFromNotas(m.notas);
             if (pid && prestamosActivos.has(pid)) return false;
           }
           if (m.tipo === "Prestamo") {
-            const pid = String(m.id != null ? m.id : m.row);
+            // Ampliación: ligada por [pid]; préstamo original: su propio id
+            const pid = parsePrestamoIdFromNotas(m.notas) || String(m.id != null ? m.id : m.row);
             if (prestamosActivos.has(pid)) return false;
           }
           return true;
@@ -4244,6 +4662,7 @@
       document.getElementById("mov-fecha").value = localDateStr(new Date());
       cargarTodo(false, true).then(() => {
         if (currentUser && currentUser.rol === "admin") purgarMovimientosAntiguos();
+        mostrarSolicitudesAlEntrar();
       });
       iniciarRealtime();
       startInactivityWatcher();
@@ -4342,7 +4761,7 @@
         name = "nuevo";
       }
 
-      const tabs = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const tabs = ["dashboard", "nuevo", "historial", "solicitudes", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       if (name === "individual") {
         llenarSelectIndividual();
       }
@@ -4384,6 +4803,8 @@
       });
     }
 
+  </script>
+  <script>
     // =====================================================
     // DASHBOARD
     // =====================================================
@@ -4492,6 +4913,7 @@
       const g = (tipo) => movSemana.filter(m => m.tipo === tipo).reduce((s, m) => s + montoParaEmpleado(m, emp.empleado), 0);
       const bonos = g("Bono");
       const extras = g("Extra");
+      const feriados = g("Feriado");
       const adelantos = g("Adelanto");
       const descuentos = movSemana.filter(m => esDescuentoEmpleado(m.tipo)).reduce((s, m) => s + montoParaEmpleado(m, emp.empleado), 0);
       const cuotasPrest = g("CuotaPrestamo");
@@ -4503,10 +4925,11 @@
       const fiados = g("Fiado");
       // Ahorro se resta (retenido); retiro de ahorro se suma (se entrega en el pago de la semana)
       // Nuevo préstamo se suma al sueldo de la semana (dinero entregado al empleado)
-      const total = emp.sueldoBase + bonos + extras + prestamosNuevos + retirosAhorro + retirosAhorroEsp
+      // Día feriado: solo el extra (el día normal ya va en el sueldo base)
+      const total = emp.sueldoBase + bonos + extras + feriados + prestamosNuevos + retirosAhorro + retirosAhorroEsp
         - adelantos - descuentos - cuotasPrest - ahorros - ahorroEsp - fiados;
       return {
-        bonos, extras, adelantos, descuentos, cuotasPrest, prestamosNuevos,
+        bonos, extras, feriados, adelantos, descuentos, cuotasPrest, prestamosNuevos,
         ahorros, ahorroEsp, retirosAhorro, retirosAhorroEsp, fiados, total
       };
     }
@@ -4536,6 +4959,7 @@
       html += row("Sueldo base", formatMoney(emp.sueldoBase));
       html += row("+ Bonos", formatMoney(d.bonos), "text-[#5ecf8f]");
       html += row("+ Extras", formatMoney(d.extras), "text-[#e0b83a]");
+      if (d.feriados) html += row("+ Día feriado", formatMoney(d.feriados), "text-[#e0b83a]");
       if (d.prestamosNuevos) html += row("+ Nuevo préstamo 💳", formatMoney(d.prestamosNuevos), "text-[#5ecf8f]");
       html += row("− Adelantos", formatMoney(d.adelantos), "text-[#e8b04a]");
       html += row("− Penalizaciones", formatMoney(d.descuentos), "text-[#e08888]");
@@ -4666,6 +5090,7 @@
 
       const movSemana = movimientosDeSemana(semanaStr);
 
+      let sumFeriados = 0;
       let sumBase = 0, sumBonos = 0, sumExtras = 0, sumAdel = 0, sumDesc = 0, sumPrestamos = 0, sumAhorro = 0, sumAhorroEsp = 0, sumFiados = 0, sumTotal = 0;
 
       const pagadosSem = getSueldosPagados(semanaStr);
@@ -4680,6 +5105,7 @@
           sumBase += emp.sueldoBase;
           sumBonos += bonos;
           sumExtras += extras;
+          sumFeriados += (d.feriados || 0);
           sumAdel += adelantos;
           sumDesc += descuentos;
           sumPrestamos += cuotasPrest;
@@ -4706,6 +5132,7 @@
               <div class="flex justify-between"><span>Sueldo base</span><span class="text-gray-300">${formatMoney(emp.sueldoBase)}</span></div>
               <div class="flex justify-between text-[#5ecf8f]"><span>+ Bonos</span><span>${formatMoney(bonos)}</span></div>
               <div class="flex justify-between text-[#e0b83a]"><span>+ Extras</span><span>${formatMoney(extras)}</span></div>
+              ${(d.feriados) ? `<div class="flex justify-between text-[#e0b83a]"><span>+ Día feriado</span><span>${formatMoney(d.feriados)}</span></div>` : ""}
               ${(d.prestamosNuevos) ? `<div class="flex justify-between text-[#5ecf8f]"><span>+ Nuevo préstamo 💳</span><span>${formatMoney(d.prestamosNuevos)}</span></div>` : ""}
               <div class="flex justify-between text-[#e8b04a]"><span>- Adelantos</span><span>${formatMoney(adelantos)}</span></div>
               <div class="flex justify-between text-[#e08888]"><span>- Penalizaciones</span><span>${formatMoney(descuentos)}</span></div>
@@ -4760,8 +5187,8 @@
             <div class="text-lg font-bold text-[#5ecf8f]">${formatMoney(sumBonos)}</div>
           </div>
           <div class="summary-pill fade-up fade-up-delay-1">
-            <div class="text-[11px] text-gray-500 uppercase tracking-wide">Extras</div>
-            <div class="text-lg font-bold text-[#e0b83a]">${formatMoney(sumExtras)}</div>
+            <div class="text-[11px] text-gray-500 uppercase tracking-wide">${sumFeriados ? "Extras y feriados" : "Extras"}</div>
+            <div class="text-lg font-bold text-[#e0b83a]">${formatMoney(sumExtras + sumFeriados)}</div>
           </div>
           <div class="summary-pill fade-up fade-up-delay-2">
             <div class="text-[11px] text-gray-500 uppercase tracking-wide">Adelantos</div>
@@ -4808,6 +5235,7 @@
         lineas.push(`Sueldo base: ${formatMoney(emp.sueldoBase)}`);
         if (d.bonos) lineas.push(`+ Bonos: ${formatMoney(d.bonos)}`);
         if (d.extras) lineas.push(`+ Extras: ${formatMoney(d.extras)}`);
+        if (d.feriados) lineas.push(`+ Día feriado: ${formatMoney(d.feriados)}`);
         if (d.prestamosNuevos) lineas.push(`+ Nuevo préstamo: ${formatMoney(d.prestamosNuevos)}`);
         if (d.adelantos) lineas.push(`− Adelantos: ${formatMoney(d.adelantos)}`);
         if (d.descuentos) lineas.push(`− Penalizaciones: ${formatMoney(d.descuentos)}`);
@@ -4857,6 +5285,7 @@
       lineas.push(`Sueldo base: ${formatMoney(emp.sueldoBase)}`);
       if (d.bonos) lineas.push(`+ Bonos: ${formatMoney(d.bonos)}`);
       if (d.extras) lineas.push(`+ Extras: ${formatMoney(d.extras)}`);
+      if (d.feriados) lineas.push(`+ Día feriado: ${formatMoney(d.feriados)}`);
       if (d.adelantos) lineas.push(`− Adelantos: ${formatMoney(d.adelantos)}`);
       if (d.descuentos) lineas.push(`− Penalizaciones: ${formatMoney(d.descuentos)}`);
       if (d.cuotasPrest) lineas.push(`− Abono Préstamo: ${formatMoney(d.cuotasPrest)}`);
@@ -4879,6 +5308,7 @@
           const montoNum = montoParaEmpleado(m, empName);
           const monto = formatMoney(montoNum);
           const tLow = String(m.tipo || "").trim().toLowerCase();
+          if (tLow === "pagoprestamo") return;
           // Prestamo: no listar aquí (sale una sola vez al final resaltado)
           if (tLow === "prestamo") {
             if (nota) notasPrestamo.push(nota);
@@ -4922,6 +5352,8 @@
     }
 
 
+  </script>
+  <script>
     // =====================================================
     // DESGLOSE INDIVIDUAL (semana + empleado)
     // =====================================================
@@ -4963,6 +5395,7 @@
       const adel = sum("Adelanto");
       const bono = sum("Bono");
       const extra = sum("Extra");
+      const feriado = sum("Feriado");
       const ahorro = sum("Ahorro");
       const ahorroEsp = sum("AhorroEspecial");
       const retiroAhorro = sum("RetiroAhorro");
@@ -4970,7 +5403,7 @@
       const fiado = sum("Fiado");
       const empObj = empleados.find(e => e.empleado === emp);
       const base = empObj ? empObj.sueldoBase : 0;
-      const total = base + bono + extra + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
+      const total = base + bono + extra + feriado + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
 
       if (empty) empty.classList.add("hidden");
 
@@ -4982,7 +5415,7 @@
             return `
             <div class="flex flex-col gap-0.5 text-sm py-2 border-b border-gray-800">
               <div class="flex justify-between gap-2">
-                <span class="text-gray-300">${formatMovimientoCuando(m)} · <span class="text-white font-medium">${m.tipo}</span>${metodo ? ` · <span class="text-[#e0b83a]">${metodo}</span>` : ""}${resp}</span>
+                <span class="text-gray-300">${formatMovimientoCuando(m)} · <span class="text-white font-medium">${m.tipo}</span>${badgeBorradoPendiente(m)}${metodo ? ` · <span class="text-[#e0b83a]">${metodo}</span>` : ""}${resp}</span>
                 <span class="font-bold whitespace-nowrap ${esGasto(m.tipo) || m.tipo === "Adelanto" || m.tipo === "Ahorro" || m.tipo === "AhorroEspecial" || m.tipo === "Fiado" || m.tipo === "CuotaPrestamo" || m.tipo === "Penalizacion" || m.tipo === "Descuento" ? "text-[#e08888]" : "text-[#5ecf8f]"}">${formatMoney(montoParaEmpleado(m, emp))}</span>
               </div>
               ${nota ? `<div class="text-xs text-gray-400 truncate">${esc(nota)}</div>` : ""}
@@ -5005,7 +5438,7 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Sueldo base</div><div class="font-bold text-gray-200">${formatMoney(base)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Bonos</div><div class="font-bold text-[#5ecf8f]">${formatMoney(bono)}</div></div>
-            <div class="summary-pill"><div class="text-[11px] text-gray-500">Extras</div><div class="font-bold text-[#e0b83a]">${formatMoney(extra)}</div></div>
+            <div class="summary-pill"><div class="text-[11px] text-gray-500">${feriado ? "Extras y feriado" : "Extras"}</div><div class="font-bold text-[#e0b83a]">${formatMoney(extra + feriado)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Nuevo préstamo</div><div class="font-bold text-[#5ecf8f]">${formatMoney(prestamosNuevos)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Adelantos</div><div class="font-bold text-[#e8b04a]">${formatMoney(adel)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Penalizaciones</div><div class="font-bold text-[#e08888]">${formatMoney(gastos)}</div></div>
@@ -5026,6 +5459,7 @@
       lineas.push(`Sueldo base: ${formatMoney(base)}`);
       if (bono) lineas.push(`+ Bonos: ${formatMoney(bono)}`);
       if (extra) lineas.push(`+ Extras: ${formatMoney(extra)}`);
+      if (feriado) lineas.push(`+ Día feriado: ${formatMoney(feriado)}`);
       if (adel) lineas.push(`− Adelantos: ${formatMoney(adel)}`);
       if (gastos) lineas.push(`− Penalizaciones: ${formatMoney(gastos)}`);
       if (cuotasPrest) lineas.push(`− Abono Préstamo: ${formatMoney(cuotasPrest)}`);
@@ -5046,6 +5480,7 @@
           const nota = notasVisibles(m.notas) || "";
           const monto = formatMoney(montoParaEmpleado(m, emp));
           const tLow = String(m.tipo || "").trim().toLowerCase();
+          if (tLow === "pagoprestamo") return;
           if (tLow === "prestamo") {
             if (nota) notasPrestamo.push(nota);
             return; // no duplicar: va al final resaltado
@@ -5117,6 +5552,7 @@
       const adel = sum("Adelanto");
       const bono = sum("Bono");
       const extra = sum("Extra");
+      const feriado = sum("Feriado");
       const ahorro = sum("Ahorro");
       const ahorroEsp = sum("AhorroEspecial");
       const retiroAhorro = sum("RetiroAhorro");
@@ -5124,7 +5560,7 @@
       const fiado = sum("Fiado");
       const empObj = empleados.find(e => e.empleado === emp);
       const base = empObj ? empObj.sueldoBase : 0;
-      const total = base + bono + extra + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
+      const total = base + bono + extra + feriado + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
       // deuda prestamo total (suma de todos los préstamos en curso del empleado)
       let saldoPrest = 0;
       try {
@@ -5143,6 +5579,7 @@
       lineas.push(padLine("Sueldo base", moneyPlain(base), W));
       if (bono) lineas.push(padLine("Bonos", "+" + moneyPlain(bono), W));
       if (extra) lineas.push(padLine("Extras", "+" + moneyPlain(extra), W));
+      if (feriado) lineas.push(padLine("Dia feriado", "+" + moneyPlain(feriado), W));
       if (prestamosNuevos) lineas.push(padLine("Nuevo prestamo", "+" + moneyPlain(prestamosNuevos), W));
       if (adel) lineas.push(padLine("Adelantos", "-" + moneyPlain(adel), W));
       if (gastos) lineas.push(padLine("Penalizaciones", "-" + moneyPlain(gastos), W));
@@ -5545,6 +5982,8 @@
       }
     }
 
+  </script>
+  <script>
     function setTipo(tipo) {
       tipoSeleccionado = tipo;
       const activeMap = {
@@ -5661,6 +6100,7 @@
           metodoBox.classList.add("hidden");
         }
       }
+      if (typeof aplicarVistaFeriado === "function") aplicarVistaFeriado(tipo);
       actualizarMontoDividido();
     }
 
@@ -5816,6 +6256,11 @@
       const monto = parseFloat(document.getElementById("mov-monto").value) || 0;
       const label = document.getElementById("monto-dividido");
       if (!label) return;
+      if (tipoSeleccionado === "Feriado") {
+        label.textContent = "";
+        if (typeof renderFeriadoPreview === "function") renderFeriadoPreview();
+        return;
+      }
 
       const labelMonto = document.getElementById("label-monto");
       if (tipoSeleccionado === "Gasto" || tipoSeleccionado === "Ingreso") {
@@ -5858,6 +6303,7 @@
 
     function guardarMovimiento() {
       if (isSaving) return;
+      if (tipoSeleccionado === "Feriado") return guardarFeriado();
       const fecha = document.getElementById("mov-fecha").value;
       const monto = parseFloat(document.getElementById("mov-monto").value);
       const notas = document.getElementById("mov-notas").value.trim();
@@ -6090,6 +6536,8 @@
       requestAnimationFrame(frame);
     }
 
+  </script>
+  <script>
     // =====================================================
     // HISTORIAL
     // =====================================================
@@ -6130,10 +6578,11 @@
       if (empty) empty.classList.add("hidden");
       const isAdmin = currentUser && currentUser.rol === "admin";
       cont.innerHTML = lista.map(m => `
-        <div class="card rounded-xl p-4 flex items-start justify-between gap-3">
+        <div class="card rounded-xl p-4 flex items-start justify-between gap-3${claseBorradoPendiente(m)}">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="tabular-nums font-semibold text-white">${formatMoney(m.monto)}</span>
+              ${badgeBorradoPendiente(m)}
             </div>
             <div class="text-sm text-gray-400 mt-1.5">${formatMovimientoCuando(m)}${notasVisibles(m.notas) ? ` · ${esc(notasVisibles(m.notas))}` : ""}</div>
             ${m.responsable ? `<div class="text-[11px] text-gray-500 mt-1">Registró: <span class="text-gray-300">${esc(m.responsable)}</span></div>` : ""}
@@ -6190,7 +6639,7 @@
       cont.innerHTML = ordenados.map(r => {
         const pid = String(r.prestamoId || "");
         const cuotasHtml = (r.cuotas || []).slice().sort((a,b) => (b.fecha||"").localeCompare(a.fecha||"")).slice(0, 8).map(c =>
-          `<div class="flex justify-between text-xs text-gray-400 py-1 border-b border-gray-800"><span>${formatDateDisplay(c.fecha)}${c._fifoLegacy ? ' <span class="text-[10px] text-gray-600">(hist.)</span>' : ""}</span><span class="text-[#e8b04a]">-${formatMoney(c.monto)}</span></div>`
+          `<div class="flex justify-between text-xs text-gray-400 py-1 border-b border-gray-800"><span>${formatDateDisplay(c.fecha)}${c._fifoLegacy ? ' <span class="text-[10px] text-gray-600">(hist.)</span>' : ""}${c._pagoFuera ? ' <span class="text-[10px] text-gray-500">· pago por fuera</span>' : ""}</span><span class="text-[#e8b04a]">-${formatMoney(c.monto)}</span></div>`
         ).join("") || `<p class="text-xs text-gray-500">Sin cuotas</p>`;
         const notaCorta = notasVisibles(r.notas || "").slice(0, 40);
 
@@ -6235,6 +6684,7 @@
                     · del ${formatDateDisplay(r.fecha)}
                     ${notaCorta ? " · " + esc(notaCorta) : ""}
                   </p>
+                  ${(r.ampliaciones || []).length ? `<p class="text-[11px] text-[#5ecf8f] mt-0.5">Ampliado ${r.ampliaciones.length} vez/veces · +${formatMoney(r.prestado - r.prestadoInicial)}</p>` : ""}
                 </div>
               </div>
               <div class="text-right">
@@ -6257,6 +6707,12 @@
                 : `<span class="text-xs text-gray-500">Pendiente esta semana: ${formatMoney(montoCuota)}</span>`
               }
               <button type="button" class="btn-outline px-3 py-2 rounded-lg text-xs" onclick='aplicarCuotaPrestamo(${jsArg(r.empleado)}, ${Number(r.cuota) || 500}, ${Number(r.saldo) || 0}, ${jsArg(pid)})'>Aplicar solo a este</button>
+            </div>
+            <div class="prest-acciones">
+              <button type="button" class="btn-ghost px-3 py-2 rounded-lg text-xs" onclick='abrirAmpliarPrestamo(${jsArg(pid)})'>Ampliar</button>
+              ${(r.cuotas || []).length
+                ? `<button type="button" class="btn-ghost px-3 py-2 rounded-lg text-xs" onclick='abrirLiquidarPrestamo(${jsArg(pid)})'>Liquidar</button>`
+                : `<button type="button" class="btn-ghost px-3 py-2 rounded-lg text-xs text-[#e08888]" onclick='borrarPrestamo(${jsArg(pid)})'>Borrar</button>`}
             </div>
           </div>
         `;
@@ -6564,10 +7020,11 @@
 
       const isAdmin = currentUser && currentUser.rol === "admin";
       cont.innerHTML = lista.map(m => `
-        <div class="card rounded-xl p-4 flex items-start justify-between gap-3">
+        <div class="card rounded-xl p-4 flex items-start justify-between gap-3${claseBorradoPendiente(m)}">
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 flex-wrap">
               <span class="tabular-nums font-semibold text-white">${formatMoney(m.monto)}</span>
+              ${badgeBorradoPendiente(m)}
             </div>
             <div class="text-sm text-gray-400 mt-1.5">
               ${formatMovimientoCuando(m)}${notasVisibles(m.notas) ? ` · ${esc(notasVisibles(m.notas))}` : ""}
@@ -6582,6 +7039,8 @@
       `).join("");
     }
 
+  </script>
+  <script>
     function fechaMovimientoLocal(m) {
       // ÚNICAMENTE la fecha de negocio del movimiento (campo fecha).
       // No usar created_at: la hora de registro en UTC/local puede ser otro día calendario.
@@ -6895,7 +7354,8 @@
         else if (esGasto(m.tipo) || m.tipo === "Penalizacion") colorTipo = "text-[#e08888]";
         else if (m.tipo === "Ingreso") colorTipo = "text-[#5ecf8f]";
         else if (m.tipo === "Prestamo") colorTipo = "text-[#5ecf8f]";
-        else if (m.tipo === "CuotaPrestamo" || m.tipo === "CuotaOmitida") colorTipo = "text-[#e8b04a]";
+        else if (m.tipo === "CuotaPrestamo" || m.tipo === "CuotaOmitida" || m.tipo === "PagoPrestamo") colorTipo = "text-[#e8b04a]";
+        else if (m.tipo === "Feriado") colorTipo = "text-[#e0b83a]";
         else if (m.tipo === "RetiroAhorro" || m.tipo === "RetiroAhorroEspecial") colorTipo = "text-[#e08888]";
         else if (m.tipo === "Ahorro") colorTipo = "text-[#6eb8d8]";
         else if (m.tipo === "AhorroEspecial") colorTipo = "text-[#b8a0d0]";
@@ -6903,7 +7363,7 @@
 
         const barColor =
           m.tipo === "Bono" ? "#34a86a" :
-          m.tipo === "Extra" ? "#c9a227" :
+          m.tipo === "Extra" || m.tipo === "Feriado" ? "#c9a227" :
           m.tipo === "Adelanto" ? "#d4920a" :
           (esGasto(m.tipo) || m.tipo === "Penalizacion") ? "#c45454" :
           m.tipo === "Ahorro" ? "#4a9bbf" :
@@ -6920,12 +7380,13 @@
           : `<span class="tabular-nums font-semibold text-[var(--text)]">${formatMoney(unit)}</span>`;
 
         return `
-          <div class="hist-card card rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer" onclick='abrirDetalleMovimiento("${escAttr(mid)}")' title="Ver detalle">
+          <div class="hist-card card rounded-xl p-4 flex items-start justify-between gap-3 cursor-pointer${claseBorradoPendiente(m)}" onclick='abrirDetalleMovimiento("${escAttr(mid)}")' title="Ver detalle">
             <div class="hist-bar" style="background:${barColor}"></div>
             <div class="flex-1 min-w-0 pl-1">
               <div class="flex items-center gap-2 flex-wrap">
                 <span class="font-semibold text-white text-[14px]" title="${esc(etiquetaEmpleadosMov(m))}">${esc(etiquetaEmpleadosMov(m))}</span>
                 <span class="text-[11px] px-2 py-0.5 rounded-md bg-[var(--bg-elevated)] border border-[var(--border)] ${colorTipo} font-medium">${esc(m.tipo)}</span>
+                ${badgeBorradoPendiente(m)}
               </div>
               <div class="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-[13px] text-[var(--text-muted)]">
                 ${montoHtml}
@@ -6937,6 +7398,8 @@
             <div class="flex flex-col gap-1 shrink-0" onclick="event.stopPropagation()">
               ${puedeEditarMovimiento(m) ? `<button type="button" onclick='abrirEditarMovimiento("${escAttr(mid)}")' class="text-aragan-yellow text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(201,162,39,0.1)] transition">Editar</button>` : ""}
               ${puedeBorrarMovimiento(m) ? `<button type="button" onclick='borrarMovimiento("${escAttr(mid)}")' class="text-[var(--text-dim)] hover:text-[#e08888] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(196,84,84,0.1)] transition">Eliminar</button>` : ""}
+              ${puedeSolicitarBorrado(m) ? `<button type="button" onclick='solicitarBorrado("${escAttr(mid)}")' class="text-[var(--text-dim)] hover:text-[#e08888] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(196,84,84,0.1)] transition">Borrar</button>` : ""}
+              ${solicitudPendienteDe(m) ? `<button type="button" onclick='verSolicitudDeMovimiento("${escAttr(mid)}")' class="text-[var(--text-muted)] text-xs px-2 py-1.5 rounded-md hover:bg-[rgba(255,255,255,0.05)] transition">Ver solicitud</button>` : ""}
             </div>
           </div>
         `;
@@ -7001,6 +7464,14 @@
         </div>`;
       }
       if (mov.semana) html += row("Semana (cierre)", formatDateDisplay(mov.semana), "text-[var(--text-muted)]");
+      const solPend = solicitudPendienteDe(mov);
+      if (solPend) {
+        html += `<div class="sol-aviso-detalle">
+          <div class="sol-motivo-label">Borrado pendiente · sigue contando</div>
+          <p>${esc(solPend.motivo)}</p>
+          <div class="sol-meta">Solicitó ${esc(solPend.solicito || "—")}</div>
+        </div>`;
+      }
 
       document.getElementById("mov-detail-body").innerHTML = html;
 
@@ -7011,6 +7482,11 @@
       }
       if (puedeBorrarMovimiento(mov)) {
         footer += `<button type="button" onclick="cerrarDetalleMovimiento(); borrarMovimiento('${String(mid).replace(/'/g, "\\'")}')" class="btn-ghost py-2.5 px-3 rounded-lg text-[#e08888]">Eliminar</button>`;
+      }
+      if (puedeSolicitarBorrado(mov)) {
+        footer += `<button type="button" onclick='cerrarDetalleMovimiento(); solicitarBorrado(${jsArg(mid)})' class="btn-ghost py-2.5 px-3 rounded-lg text-[#e08888]">Borrar</button>`;
+      } else if (solPend) {
+        footer += `<button type="button" onclick='verSolicitudDeMovimiento(${jsArg(mid)})' class="btn-outline py-2.5 px-3 rounded-lg">Ver solicitud</button>`;
       }
       document.getElementById("mov-detail-footer").innerHTML = footer;
       document.getElementById("mov-detail-overlay").classList.remove("hidden");
@@ -7346,7 +7822,7 @@
         notas = (notas + " [cuota:" + cuotaOld + "]").trim();
       }
       const pidOld = parsePrestamoIdFromNotas(mov.notas);
-      if ((tipo === "CuotaPrestamo") && pidOld && !/\[pid:/i.test(notas)) {
+      if ((tipo === "CuotaPrestamo" || tipo === "PagoPrestamo" || tipo === "Prestamo") && pidOld && !/\[pid:/i.test(notas)) {
         notas = notasConPrestamoId(notas, pidOld);
       }
 
@@ -7502,6 +7978,8 @@
       }
     }
 
+  </script>
+  <script>
     // =====================================================
     // EMPLEADOS
     // =====================================================
@@ -7728,6 +8206,991 @@
       }
     }
 
+  </script>
+  <script>
+    // =====================================================
+    // SOLICITUDES DE BORRADO
+    // =====================================================
+    // Los empleados no borran movimientos: piden el borrado con un motivo y un admin
+    // lo aprueba o lo rechaza. Todo queda registrado en la tabla `movimientos` como
+    // filas de monto 0 con empleado "Solicitud" (igual que las marcas "CuotaOmitida"),
+    // así no hace falta crear tablas nuevas y llega en tiempo real a todos:
+    //   SolicitudBorrado   → la solicitud. notas = JSON { mid, motivo, mov } (mov = copia del movimiento)
+    //   SolicitudCancelada → el empleado la retiró.           notas = JSON { sol, motivo }
+    //   SolicitudRechazada → un admin la rechazó.              notas = JSON { sol }
+    //   SolicitudAprobada  → un admin la aprobó y borró el movimiento. notas = JSON { sol }
+    // Al cargar, estas filas se separan de `movimientos` (separarSolicitudes), por lo que
+    // no cuentan en sueldos, totales, historial ni copias por día. Mientras una solicitud
+    // está pendiente el movimiento sigue contando normal; deja de contar solo al aprobarse.
+    const SOL_TIPO = {
+      SOLICITUD: "SolicitudBorrado",
+      CANCELADA: "SolicitudCancelada",
+      RECHAZADA: "SolicitudRechazada",
+      APROBADA: "SolicitudAprobada"
+    };
+    const SOL_TIPOS = new Set(Object.values(SOL_TIPO));
+    const SOL_EMPLEADO = "Solicitud";
+    const SOL_HISTORIAL_PASO = 30;
+    const SOL_ETIQUETA_ESTADO = {
+      pendiente: "Pendiente",
+      aprobada: "Borrado aprobado",
+      rechazada: "Rechazada",
+      cancelada: "Cancelada",
+      sin_efecto: "Movimiento ya eliminado"
+    };
+
+    let solicitudesRegistros = [];
+    let _solCache = null;
+    let _solPendientesVistas = null;   // ids pendientes ya vistos, para avisar a los admins de las nuevas
+    let _solEntradaLista = false;      // ya cargaron los datos al entrar (antes de eso no se avisa de "nuevas")
+    let _solHistorialVisibles = SOL_HISTORIAL_PASO;
+    const _solHistorialAbiertas = new Set();
+    const _solTituloBase = document.title;
+
+    function esRegistroSolicitud(m) {
+      return !!m && SOL_TIPOS.has(String(m.tipo || "").trim());
+    }
+
+    /** Guarda aparte las filas de solicitudes y devuelve solo los movimientos normales. */
+    function separarSolicitudes(lista) {
+      const normales = [];
+      const registros = [];
+      (lista || []).forEach(m => (esRegistroSolicitud(m) ? registros : normales).push(m));
+      solicitudesRegistros = registros;
+      _solCache = null;
+      return normales;
+    }
+
+    function _solDatos(r) {
+      try { return JSON.parse(r && r.notas ? r.notas : "{}") || {}; } catch (_) { return {}; }
+    }
+
+    function _solIdMov(m) {
+      return String(m && (m.id != null ? m.id : m.row));
+    }
+
+    function _solOrden(a, b) {
+      const na = Number(a.id) || 0, nb = Number(b.id) || 0;
+      if (na !== nb) return na - nb;
+      return String(a.created_at || "").localeCompare(String(b.created_at || ""));
+    }
+
+    /** Copia de lo que se ve de un movimiento (se guarda en la solicitud por si luego se borra). */
+    function _copiaMovimiento(m) {
+      const miembros = miembrosMovimiento(m);
+      const esGrupo = miembros.length > 1 || m.empleado === "Grupo";
+      const unit = Number(m.monto) || 0;
+      return {
+        tipo: m.tipo || "",
+        monto: unit,
+        total: esGrupo ? Math.round(unit * Math.max(miembros.length, 1) * 100) / 100 : unit,
+        personas: esGrupo ? miembros.length : 1,
+        empleado: etiquetaEmpleadosMov(m),
+        fecha: m.fecha || "",
+        semana: m.semana || "",
+        responsable: m.responsable || "",
+        nota: notasVisibles(m.notas),
+        metodo: parseMetodoFromNotas(m.notas)
+      };
+    }
+
+    /**
+     * Estado de todas las solicitudes, calculado a partir de los registros.
+     * Se recalcula solo cuando cambian `movimientos` o los registros.
+     */
+    function resumenSolicitudes() {
+      if (_solCache && _solCache.movs === movimientos && _solCache.regs === solicitudesRegistros) {
+        return _solCache.res;
+      }
+      const movPorId = new Map();
+      (movimientos || []).forEach(m => movPorId.set(_solIdMov(m), m));
+
+      const ordenados = solicitudesRegistros.slice().sort(_solOrden);
+      const cierres = new Map();
+      ordenados.forEach(r => {
+        if (r.tipo === SOL_TIPO.SOLICITUD) return;
+        const d = _solDatos(r);
+        const sid = String(d.sol || "");
+        if (sid && !cierres.has(sid)) cierres.set(sid, { r, d });
+      });
+
+      const lista = [];
+      const porMov = new Map();
+      ordenados.forEach(r => {
+        if (r.tipo !== SOL_TIPO.SOLICITUD) return;
+        const d = _solDatos(r);
+        const id = _solIdMov(r);
+        const mid = String(d.mid || "");
+        const mov = movPorId.get(mid) || null;
+        const cierre = cierres.get(id) || null;
+        let estado = "pendiente";
+        if (cierre) {
+          estado = cierre.r.tipo === SOL_TIPO.APROBADA ? "aprobada"
+            : cierre.r.tipo === SOL_TIPO.RECHAZADA ? "rechazada" : "cancelada";
+        } else if (!mov) {
+          estado = "sin_efecto";
+        }
+        // Solo una solicitud pendiente por movimiento (la primera); las repetidas no cuentan
+        if (estado === "pendiente" && porMov.has(mid)) return;
+        const s = {
+          id, mid, mov, estado,
+          copia: d.mov || {},
+          motivo: String(d.motivo || ""),
+          solicito: r.responsable || "",
+          fecha: r.created_at || r.fecha || "",
+          cierre: cierre ? {
+            tipo: cierre.r.tipo,
+            motivo: String(cierre.d.motivo || ""),
+            por: cierre.r.responsable || "",
+            fecha: cierre.r.created_at || cierre.r.fecha || ""
+          } : null
+        };
+        lista.push(s);
+        if (estado === "pendiente") porMov.set(mid, s);
+      });
+      lista.reverse(); // más reciente primero
+
+      const res = {
+        lista,
+        pendientes: lista.filter(s => s.estado === "pendiente"),
+        cerradas: lista.filter(s => s.estado !== "pendiente"),
+        porMov
+      };
+      _solCache = { movs: movimientos, regs: solicitudesRegistros, res };
+      return res;
+    }
+
+    function solicitudPendienteDe(m) {
+      if (!m) return null;
+      return resumenSolicitudes().porMov.get(_solIdMov(m)) || null;
+    }
+
+    function puedeSolicitarBorrado(m) {
+      return !!(currentUser && m && currentUser.rol !== "admin" && !solicitudPendienteDe(m));
+    }
+
+    /** Clase y etiqueta para mostrar un movimiento con borrado pendiente (sigue contando). */
+    function claseBorradoPendiente(m) {
+      return solicitudPendienteDe(m) ? " mov-borrado-pendiente" : "";
+    }
+    function badgeBorradoPendiente(m) {
+      return solicitudPendienteDe(m)
+        ? `<span class="sol-badge-mov" title="Sigue contando hasta que un admin apruebe el borrado">Borrado pendiente</span>`
+        : "";
+    }
+
+    function _solBuscarMov(rowId) {
+      return (movimientos || []).find(m => String(m.id) === String(rowId) || String(m.row) === String(rowId)) || null;
+    }
+    function _solBuscar(solId) {
+      return resumenSolicitudes().lista.find(s => s.id === String(solId)) || null;
+    }
+
+    function _solMonto(c) {
+      const total = formatMoney(c.total != null ? c.total : c.monto);
+      return c.personas > 1 ? `${total} <span class="text-[11px] text-[var(--text-muted)]">(${formatMoney(c.monto)} c/u)</span>` : total;
+    }
+    function _solMontoTexto(c) {
+      return formatMoney(c.total != null ? c.total : c.monto);
+    }
+    function _solDatosVista(s) {
+      return s.mov ? _copiaMovimiento(s.mov) : (s.copia || {});
+    }
+
+    function _solResumenMovHtml(c) {
+      const linea2 = [formatDateDisplay(c.fecha), c.metodo, c.responsable ? "Registró " + c.responsable : ""].filter(Boolean).map(esc).join(" · ");
+      return `
+        <div class="sol-mov">
+          <div class="flex items-start justify-between gap-3">
+            <div class="min-w-0">
+              <div class="flex items-center gap-2 flex-wrap">
+                <span class="font-semibold text-white text-[14px]">${esc(c.empleado || "—")}</span>
+                <span class="sol-tipo">${esc(c.tipo || "")}</span>
+              </div>
+              <div class="text-[12.5px] text-[var(--text-muted)] mt-1">${linea2}</div>
+              ${c.nota ? `<div class="text-[12.5px] text-[var(--text-dim)] mt-0.5 break-words">${esc(c.nota)}</div>` : ""}
+            </div>
+            <div class="font-semibold text-white tabular-nums text-right shrink-0">${_solMonto(c)}</div>
+          </div>
+        </div>`;
+    }
+
+    function _solTextoConfirmacion(c) {
+      return `${c.tipo} · ${_solMontoTexto(c)} · ${c.empleado}\n${formatDateDisplay(c.fecha)}${c.nota ? "\n" + c.nota : ""}`;
+    }
+
+    // ---------- Ventana para escribir el motivo ----------
+    let _motivoResolver = null;
+    function pedirMotivo({ titulo, resumenHtml, boton, placeholder }) {
+      if (_motivoResolver) _motivoResolver(null);
+      document.getElementById("motivo-titulo").textContent = titulo;
+      document.getElementById("motivo-resumen").innerHTML = resumenHtml || "";
+      const txt = document.getElementById("motivo-texto");
+      txt.value = "";
+      txt.placeholder = placeholder || "";
+      document.getElementById("motivo-error").classList.add("hidden");
+      document.getElementById("btn-motivo-ok").textContent = boton || "Enviar";
+      document.getElementById("motivo-overlay").classList.remove("hidden");
+      setTimeout(() => { try { txt.focus(); } catch (_) {} }, 80);
+      return new Promise(resolve => { _motivoResolver = resolve; });
+    }
+    function enviarMotivo() {
+      const txt = document.getElementById("motivo-texto");
+      const motivo = (txt.value || "").trim();
+      if (!motivo) {
+        document.getElementById("motivo-error").classList.remove("hidden");
+        txt.focus();
+        return;
+      }
+      const r = _motivoResolver;
+      _motivoResolver = null;
+      document.getElementById("motivo-overlay").classList.add("hidden");
+      if (r) r(motivo);
+    }
+    function cerrarMotivo() {
+      const r = _motivoResolver;
+      _motivoResolver = null;
+      document.getElementById("motivo-overlay").classList.add("hidden");
+      if (r) r(null);
+    }
+    document.getElementById("motivo-texto")?.addEventListener("input", () => {
+      document.getElementById("motivo-error").classList.add("hidden");
+    });
+
+    // ---------- Guardar registros ----------
+    async function _solGuardarRegistro(tipo, datos, auditoria) {
+      const hoy = localDateStr(new Date());
+      const row = {
+        fecha: hoy,
+        empleado: SOL_EMPLEADO,
+        tipo,
+        monto: 0,
+        notas: JSON.stringify(Object.assign({ v: 1 }, datos)),
+        semana: semanaDesdeFecha(hoy),
+        responsable: (currentUser && currentUser.usuario) || ""
+      };
+      const { data, error } = await sb.from("movimientos").insert([row]).select("*");
+      if (error) throw error;
+      const guardado = mapMovimiento((data && data[0]) || Object.assign({ id: "local-" + Date.now(), created_at: new Date().toISOString() }, row));
+      solicitudesRegistros = solicitudesRegistros.concat([guardado]);
+      _solCache = null;
+      try {
+        await logAuditoria(auditoria.operacion, {
+          id: guardado.id, fecha: row.fecha, tipo, monto: 0,
+          empleado: auditoria.empleado || "", notas: auditoria.notas || "", responsable: row.responsable
+        });
+      } catch (_) {}
+      return guardado;
+    }
+
+    function _solRefrescar() {
+      guardarCache();
+      aplicarDatosEnPantalla();
+    }
+
+    function _solError(err, texto) {
+      console.error(err);
+      showToast(`${texto}: ${(err && err.message) || "error de conexión"}`, "error");
+    }
+
+    // ---------- Acciones ----------
+    /** Empleado: pide borrar un movimiento. Admin: borra directo, como siempre. */
+    async function solicitarBorrado(rowId) {
+      if (!currentUser) return showToast("Inicia sesión", "error");
+      if (currentUser.rol === "admin") return borrarMovimiento(rowId);
+      const mov = _solBuscarMov(rowId);
+      if (!mov) return showToast("No se encontró el movimiento", "error");
+      if (solicitudPendienteDe(mov)) return showToast("Este movimiento ya tiene una solicitud pendiente", "info");
+      if (isSaving) return;
+      const copia = _copiaMovimiento(mov);
+      const motivo = await pedirMotivo({
+        titulo: "Solicitar borrado",
+        resumenHtml: _solResumenMovHtml(copia) + `<p class="text-[12px] text-[var(--text-muted)] mt-2">Un admin debe aprobarlo. Mientras tanto, el movimiento sigue contando.</p>`,
+        boton: "Enviar solicitud",
+        placeholder: "Ej. no se realizó el adelanto, regresó el dinero…"
+      });
+      if (motivo == null) return;
+      if (solicitudPendienteDe(mov)) return showToast("Este movimiento ya tiene una solicitud pendiente", "info");
+      isSaving = true;
+      try {
+        await _solGuardarRegistro(SOL_TIPO.SOLICITUD, { mid: _solIdMov(mov), motivo, mov: copia }, {
+          operacion: "SOLICITUD_BORRADO", empleado: copia.empleado, notas: motivo
+        });
+        _solRefrescar();
+        showToast("Solicitud enviada. Un admin la revisará");
+      } catch (err) {
+        _solError(err, "No se pudo enviar la solicitud");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    /** Quien la pidió la retira (con motivo). No necesita aprobación. */
+    async function cancelarSolicitud(solId) {
+      const s = _solBuscar(solId);
+      if (!s || s.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      if (!currentUser || s.solicito !== currentUser.usuario) return showToast("Solo quien la pidió puede cancelarla", "error");
+      if (isSaving) return;
+      const motivo = await pedirMotivo({
+        titulo: "Cancelar solicitud",
+        resumenHtml: _solResumenMovHtml(_solDatosVista(s)) + `<p class="text-[12px] text-[var(--text-muted)] mt-2">El movimiento se queda como está.</p>`,
+        boton: "Cancelar solicitud",
+        placeholder: "Ej. sí se va a hacer el adelanto"
+      });
+      if (motivo == null) return;
+      isSaving = true;
+      try {
+        await _solGuardarRegistro(SOL_TIPO.CANCELADA, { sol: s.id, motivo }, {
+          operacion: "SOLICITUD_CANCELADA", empleado: _solDatosVista(s).empleado, notas: motivo
+        });
+        _solRefrescar();
+        showToast("Solicitud cancelada");
+      } catch (err) {
+        _solError(err, "No se pudo cancelar");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    /** Admin: aprueba, borra el movimiento y deja registro. */
+    async function aprobarSolicitud(solId) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const s = _solBuscar(solId);
+      if (!s || s.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      if (isSaving) return;
+      const mov = s.mov;
+      const c = _copiaMovimiento(mov);
+      const ok = await uiConfirm(`¿Aprobar y borrar este movimiento?\n${_solTextoConfirmacion(c)}\n\nMotivo: ${s.motivo}\n\nDejará de contar en sueldos y totales. No se puede deshacer.`);
+      if (!ok) return;
+      const actual = _solBuscar(solId);
+      if (!actual || actual.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      isSaving = true;
+      try {
+        const id = mov.id || mov.row;
+        try {
+          await logAuditoria("DELETE", {
+            id, fecha: mov.fecha, tipo: mov.tipo, monto: mov.monto, empleado: mov.empleado,
+            notas: mov.notas, responsable: mov.responsable, semana: mov.semana
+          });
+        } catch (_) {}
+        const { error } = await sb.from("movimientos").delete().in("id", [Number(id) || id]);
+        if (error) throw error;
+        movimientos = movimientos.filter(m => String(m.id || m.row) !== String(id));
+        _solCache = null;
+        try {
+          await _solGuardarRegistro(SOL_TIPO.APROBADA, { sol: s.id }, {
+            operacion: "SOLICITUD_APROBADA", empleado: c.empleado, notas: s.motivo
+          });
+          showToast("Movimiento borrado");
+        } catch (err) {
+          // El movimiento ya se borró; la solicitud quedará como "Movimiento ya eliminado"
+          _solError(err, "Movimiento borrado, pero no se guardó el registro de aprobación");
+        }
+        _solRefrescar();
+      } catch (err) {
+        _solError(err, "No se pudo borrar el movimiento");
+        await cargarTodoOptimizado();
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    /** Admin: rechaza; el movimiento queda igual. */
+    async function rechazarSolicitud(solId) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const s = _solBuscar(solId);
+      if (!s || s.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      if (isSaving) return;
+      const c = _solDatosVista(s);
+      const ok = await uiConfirm(`¿Rechazar la solicitud?\n${_solTextoConfirmacion(c)}\n\nEl movimiento se queda como está.`);
+      if (!ok) return;
+      const actual = _solBuscar(solId);
+      if (!actual || actual.estado !== "pendiente") return showToast("La solicitud ya no está pendiente", "info");
+      isSaving = true;
+      try {
+        await _solGuardarRegistro(SOL_TIPO.RECHAZADA, { sol: s.id }, {
+          operacion: "SOLICITUD_RECHAZADA", empleado: c.empleado, notas: s.motivo
+        });
+        _solRefrescar();
+        showToast("Solicitud rechazada");
+      } catch (err) {
+        _solError(err, "No se pudo rechazar");
+      } finally {
+        isSaving = false;
+      }
+    }
+
+    function verSolicitudDeMovimiento(rowId) {
+      const mov = _solBuscarMov(rowId);
+      const s = solicitudPendienteDe(mov);
+      if (typeof cerrarDetalleMovimiento === "function") cerrarDetalleMovimiento();
+      showTab("solicitudes");
+      if (!s) return;
+      setTimeout(() => {
+        const el = document.querySelector(`#solicitudes-pendientes [data-sol="${CSS.escape(s.id)}"]`);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 120);
+    }
+
+    // ---------- Vista ----------
+    function _solTarjeta(s) {
+      const c = _solDatosVista(s);
+      const isAdmin = currentUser && currentUser.rol === "admin";
+      const esMia = currentUser && s.solicito === currentUser.usuario;
+      const sid = jsArg(s.id);
+      let acciones = "";
+      if (isAdmin) {
+        acciones = `
+          <div class="sol-acciones">
+            <button type="button" class="btn-ghost px-4 py-2 rounded-lg text-[13px]" onclick='rechazarSolicitud(${sid})'>Rechazar</button>
+            <button type="button" class="btn-danger px-4 py-2 rounded-lg text-[13px]" onclick='aprobarSolicitud(${sid})'>Aprobar borrado</button>
+          </div>`;
+      } else if (esMia) {
+        acciones = `
+          <div class="sol-acciones">
+            <button type="button" class="btn-ghost px-4 py-2 rounded-lg text-[13px]" onclick='cancelarSolicitud(${sid})'>Cancelar solicitud</button>
+          </div>`;
+      }
+      return `
+        <div class="sol-card card rounded-xl p-4" data-sol="${esc(s.id)}">
+          <div class="flex items-center justify-between gap-2 mb-2.5">
+            <span class="sol-estado sol-estado-pendiente">Pendiente</span>
+            <span class="text-[11px] text-[var(--text-dim)]">${esc(formatDateTimeDisplay(s.fecha))}</span>
+          </div>
+          ${_solResumenMovHtml(c)}
+          <div class="sol-motivo">
+            <div class="sol-motivo-label">Motivo del borrado</div>
+            <p>${esc(s.motivo)}</p>
+            <div class="sol-meta">Solicitó ${esc(s.solicito || "—")}</div>
+          </div>
+          ${acciones}
+        </div>`;
+    }
+
+    function _solFilaHistorial(s) {
+      const c = _solDatosVista(s);
+      const abierta = _solHistorialAbiertas.has(s.id);
+      let detalle = "";
+      if (abierta) {
+        const cierre = s.cierre;
+        const accion = !cierre ? "" :
+          cierre.tipo === SOL_TIPO.APROBADA ? "Aprobó" :
+          cierre.tipo === SOL_TIPO.RECHAZADA ? "Rechazó" : "Canceló";
+        detalle = `
+          <div class="sol-hist-detalle" onclick="event.stopPropagation()">
+            ${_solResumenMovHtml(c)}
+            <div class="sol-motivo">
+              <div class="sol-motivo-label">Motivo del borrado</div>
+              <p>${esc(s.motivo)}</p>
+              <div class="sol-meta">Solicitó ${esc(s.solicito || "—")} · ${esc(formatDateTimeDisplay(s.fecha))}</div>
+            </div>
+            ${cierre ? `
+              <div class="sol-motivo">
+                <div class="sol-motivo-label">${cierre.tipo === SOL_TIPO.CANCELADA ? "Motivo de la cancelación" : "Resolución"}</div>
+                ${cierre.motivo ? `<p>${esc(cierre.motivo)}</p>` : ""}
+                <div class="sol-meta">${accion} ${esc(cierre.por || "—")} · ${esc(formatDateTimeDisplay(cierre.fecha))}</div>
+              </div>` : `
+              <div class="sol-meta">El movimiento se borró fuera de esta solicitud.</div>`}
+          </div>`;
+      }
+      return `
+        <div class="sol-hist sol-${s.estado}${abierta ? " is-open" : ""}" role="button" tabindex="0" aria-expanded="${abierta}"
+             onclick='toggleSolicitudHistorial(${jsArg(s.id)})' onkeydown='if(event.key==="Enter"||event.key===" "){event.preventDefault();toggleSolicitudHistorial(${jsArg(s.id)})}'>
+          <span class="sol-esquina">${SOL_ETIQUETA_ESTADO[s.estado] || ""}</span>
+          <div class="sol-hist-linea"><span class="text-white font-medium">${esc(c.tipo || "")} · ${esc(_solMontoTexto(c))}</span> · ${esc(c.empleado || "—")}</div>
+          <div class="sol-hist-sub">${esc(formatDateDisplay(String(s.fecha).slice(0, 10)))} · Solicitó ${esc(s.solicito || "—")}</div>
+          ${detalle}
+        </div>`;
+    }
+
+    function toggleSolicitudHistorial(id) {
+      id = String(id);
+      if (_solHistorialAbiertas.has(id)) _solHistorialAbiertas.delete(id);
+      else _solHistorialAbiertas.add(id);
+      _solRenderHistorial();
+    }
+    function verMasSolicitudes() {
+      _solHistorialVisibles += SOL_HISTORIAL_PASO;
+      _solRenderHistorial();
+    }
+
+    function _solRenderHistorial() {
+      const cont = document.getElementById("solicitudes-historial");
+      const empty = document.getElementById("solicitudes-historial-empty");
+      if (!cont) return;
+      const { cerradas } = resumenSolicitudes();
+      if (!cerradas.length) {
+        cont.innerHTML = "";
+        if (empty) empty.classList.remove("hidden");
+        return;
+      }
+      if (empty) empty.classList.add("hidden");
+      const visibles = cerradas.slice(0, _solHistorialVisibles);
+      cont.innerHTML = visibles.map(_solFilaHistorial).join("") +
+        (cerradas.length > visibles.length
+          ? `<button type="button" class="btn-ghost w-full py-2.5 rounded-lg text-[13px]" onclick="verMasSolicitudes()">Mostrar más (${cerradas.length - visibles.length})</button>`
+          : "");
+    }
+
+    function renderSolicitudes() {
+      const { pendientes } = resumenSolicitudes();
+      const n = pendientes.length;
+      const isAdmin = currentUser && currentUser.rol === "admin";
+
+      // Indicadores: sobre del encabezado, menú lateral y pestaña
+      const badge = document.getElementById("solic-badge");
+      if (badge) {
+        const antes = badge.textContent;
+        badge.textContent = n > 99 ? "99+" : String(n);
+        badge.classList.toggle("hidden", n === 0);
+        if (n > 0 && antes !== badge.textContent) {
+          badge.classList.remove("bump");
+          void badge.offsetWidth;
+          badge.classList.add("bump");
+        }
+      }
+      document.getElementById("btn-solicitudes")?.classList.toggle("has-pending", n > 0);
+      const btnSol = document.getElementById("btn-solicitudes");
+      if (btnSol) btnSol.setAttribute("aria-label", n ? `Solicitudes de borrado: ${n} pendiente(s)` : "Solicitudes de borrado");
+      const dc = document.getElementById("drawer-solic-count");
+      if (dc) { dc.textContent = String(n); dc.classList.toggle("hidden", n === 0); }
+      const pc = document.getElementById("sol-pend-count");
+      if (pc) pc.textContent = n ? String(n) : "";
+      document.title = (isAdmin && n ? `(${n}) ` : "") + _solTituloBase;
+
+      // Aviso a admins cuando llega una solicitud nueva mientras usan la app
+      const ids = new Set(pendientes.map(s => s.id));
+      if (_solEntradaLista && _solPendientesVistas && isAdmin) {
+        const nuevas = pendientes.filter(s => !_solPendientesVistas.has(s.id) && s.solicito !== currentUser.usuario);
+        if (nuevas.length === 1) showToast(`Nueva solicitud de borrado de ${nuevas[0].solicito || "un empleado"}`, "info");
+        else if (nuevas.length > 1) showToast(`${nuevas.length} solicitudes de borrado nuevas`, "info");
+      }
+      if (currentUser) _solPendientesVistas = ids;
+
+      // Vista
+      const cont = document.getElementById("solicitudes-pendientes");
+      const empty = document.getElementById("solicitudes-pendientes-empty");
+      if (cont) {
+        cont.innerHTML = pendientes.map(_solTarjeta).join("");
+        if (empty) empty.classList.toggle("hidden", n > 0);
+      }
+      _solRenderHistorial();
+
+      // Ventana de pendientes (si está abierta)
+      const ov = document.getElementById("solic-overlay");
+      if (ov && !ov.classList.contains("hidden")) {
+        if (!n) {
+          ov.classList.add("hidden");
+        } else {
+          document.getElementById("solic-overlay-lista").innerHTML = pendientes.map(_solTarjeta).join("");
+          document.getElementById("solic-overlay-sub").textContent = `${n} por revisar`;
+        }
+      }
+    }
+
+    // ---------- Ventana de pendientes al entrar (admins) ----------
+    function abrirSolicitudesPendientes() {
+      const { pendientes } = resumenSolicitudes();
+      if (!pendientes.length) return showTab("solicitudes");
+      document.getElementById("solic-overlay-lista").innerHTML = pendientes.map(_solTarjeta).join("");
+      document.getElementById("solic-overlay-sub").textContent = `${pendientes.length} por revisar`;
+      document.getElementById("solic-overlay").classList.remove("hidden");
+    }
+    function cerrarSolicitudesPendientes() {
+      document.getElementById("solic-overlay")?.classList.add("hidden");
+    }
+    /** Se llama al entrar a la app, cuando ya cargaron los datos. */
+    function mostrarSolicitudesAlEntrar() {
+      const { pendientes } = resumenSolicitudes();
+      _solPendientesVistas = new Set(pendientes.map(s => s.id));
+      _solEntradaLista = true;
+      if (!currentUser || currentUser.rol !== "admin") return;
+      if (pendientes.length) abrirSolicitudesPendientes();
+    }
+
+    /** Al cerrar sesión: cerrar ventanas y olvidar lo visto. */
+    function reiniciarSolicitudes() {
+      cerrarSolicitudesPendientes();
+      cerrarMotivo();
+      _solPendientesVistas = null;
+      _solEntradaLista = false;
+      _solHistorialAbiertas.clear();
+      _solHistorialVisibles = SOL_HISTORIAL_PASO;
+      document.title = _solTituloBase;
+    }
+  </script>
+  <script>
+    // =====================================================
+    // DÍA FERIADO
+    // =====================================================
+    // Paga el extra de un feriado trabajado. Sueldo diario = sueldo semanal ÷ 7.
+    // El multiplicador es el pago TOTAL del día. Como ese día ya va dentro del sueldo base,
+    // solo se registra la diferencia: extra = diario × (multiplicador − 1).
+    //   Ej. $700/semana → $100/día. x2 → +$100 (semana de $800). x3 → +$200 (semana de $900).
+    // Se guarda una fila "Feriado" por empleado con el monto ya calculado, para que un cambio
+    // posterior del sueldo base no mueva feriados pasados.
+    const FERIADO_MULT_MIN = 1.5;
+    const FERIADO_MULT_MAX = 5;
+    let multiplicadorFeriado = 2;
+
+    function _redondear2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
+    function extraFeriado(sueldoSemanal, mult) {
+      return _redondear2((Number(sueldoSemanal) || 0) / 7 * (Number(mult) - 1));
+    }
+    function _multiplicadorValido(m) { return m >= FERIADO_MULT_MIN && m <= FERIADO_MULT_MAX; }
+    function _multTexto(m) { return "x" + String(_redondear2(m)); }
+
+    function aplicarVistaFeriado(tipo) {
+      const es = tipo === "Feriado";
+      document.getElementById("feriado-box")?.classList.toggle("hidden", !es);
+      document.getElementById("monto-box")?.classList.toggle("hidden", es);
+      if (es) document.getElementById("modo-monto-box")?.classList.add("hidden");
+      const notas = document.getElementById("mov-notas");
+      if (notas) notas.placeholder = es ? "Opcional. Ej. 16 de septiembre" : "Motivo";
+      if (es) setMultiplicadorFeriado(multiplicadorFeriado, false);
+    }
+
+    function setMultiplicadorFeriado(valor, desdeCampo) {
+      const n = Number(String(valor ?? "").replace(",", "."));
+      const otro = document.getElementById("feriado-otro");
+      if (desdeCampo) {
+        multiplicadorFeriado = String(valor ?? "").trim() === "" ? 2 : n;
+      } else {
+        multiplicadorFeriado = n;
+        if (otro && n !== 2 && n !== 3) otro.value = String(n);
+        else if (otro) otro.value = "";
+      }
+      document.getElementById("feriado-x2")?.classList.toggle("modo-active", multiplicadorFeriado === 2 && !(otro && otro.value));
+      document.getElementById("feriado-x3")?.classList.toggle("modo-active", multiplicadorFeriado === 3 && !(otro && otro.value));
+      renderFeriadoPreview();
+    }
+
+    function _filasFeriado(mult) {
+      return [...document.querySelectorAll(".emp-check:checked")].map(c => {
+        const e = empleados.find(x => x.empleado === c.value);
+        const base = e ? Number(e.sueldoBase) || 0 : 0;
+        return { nombre: c.value, base, diario: base / 7, monto: extraFeriado(base, mult) };
+      });
+    }
+
+    function renderFeriadoPreview() {
+      const cont = document.getElementById("feriado-preview");
+      if (!cont || tipoSeleccionado !== "Feriado") return;
+      const mult = multiplicadorFeriado;
+      if (!_multiplicadorValido(mult)) {
+        cont.innerHTML = `<p class="feriado-aviso">Escribe un multiplicador entre ${FERIADO_MULT_MIN} y ${FERIADO_MULT_MAX}.</p>`;
+        return;
+      }
+      const filas = _filasFeriado(mult);
+      if (!filas.length) {
+        cont.innerHTML = `<p class="feriado-vacio">Elige a quién se le paga el feriado.</p>`;
+        return;
+      }
+      const total = filas.reduce((s, f) => s + f.monto, 0);
+      cont.innerHTML = filas.map(f => `
+        <div class="feriado-fila">
+          <span class="min-w-0 truncate text-[var(--text)]">${esc(f.nombre)}</span>
+          ${f.base > 0
+            ? `<span class="text-[var(--text-muted)] tabular-nums">${formatMoney(f.diario)}/día</span>
+               <span class="text-[#e0b83a] font-semibold tabular-nums">+${formatMoney(f.monto)}</span>`
+            : `<span class="text-[#e08888] col-span-2 text-right">Sin sueldo base</span>`}
+        </div>`).join("") + `
+        <div class="feriado-fila feriado-total">
+          <span>Total extra · pago ${_multTexto(mult)}</span><span></span>
+          <span class="text-[#e0b83a] font-semibold tabular-nums">+${formatMoney(total)}</span>
+        </div>`;
+    }
+
+    async function guardarFeriado() {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin puede registrar feriados", "error");
+      if (isSaving) return;
+      const fecha = document.getElementById("mov-fecha").value;
+      if (!fecha) return showToast("Elige la fecha del feriado", "error");
+      const mult = multiplicadorFeriado;
+      if (!_multiplicadorValido(mult)) return showToast(`Elige x2, x3 u otro multiplicador entre ${FERIADO_MULT_MIN} y ${FERIADO_MULT_MAX}`, "error");
+      const filas = _filasFeriado(mult);
+      if (!filas.length) return showToast("Selecciona al menos un empleado", "error");
+      const sinSueldo = filas.filter(f => f.monto <= 0);
+      if (sinSueldo.length) return showToast(`Sin sueldo base: ${sinSueldo.map(f => f.nombre).join(", ")}. Agrégalo en Empleados.`, "error");
+
+      const nota = (document.getElementById("mov-notas").value || "").trim();
+      const multTxt = _multTexto(mult);
+      const notas = `${nota || "Día feriado"} · pago ${multTxt}`;
+      const total = _redondear2(filas.reduce((s, f) => s + f.monto, 0));
+      const detalle = (filas.length <= 6 ? filas : filas.slice(0, 5))
+        .map(f => `${f.nombre}: +${formatMoney(f.monto)}`).join("\n") +
+        (filas.length > 6 ? `\ny ${filas.length - 5} más` : "");
+      const ok = await uiConfirm(`¿Registrar día feriado ${multTxt}?\n${formatDateDisplay(fecha)} · pago total del día ${multTxt}\n\n${detalle}\n\nTotal extra: ${formatMoney(total)}`);
+      if (!ok) return;
+
+      isSaving = true;
+      const btn = document.getElementById("btn-guardar-mov");
+      setButtonLoading(btn, true, "Registrar movimiento");
+      try {
+        const semana = semanaDesdeFecha(fecha);
+        const rows = filas.map(f => ({
+          fecha,
+          empleado: f.nombre,
+          tipo: "Feriado",
+          monto: f.monto,
+          notas,
+          semana,
+          responsable: currentUser.usuario || ""
+        }));
+        const { data, error } = await sb.from("movimientos").insert(rows).select("*");
+        if (error) throw error;
+        for (const r of (data && data.length ? data : rows)) {
+          try { await logAuditoria("INSERT", r); } catch (_) {}
+        }
+        showToast(`Feriado ${multTxt} registrado · ${filas.length} persona(s) · +${formatMoney(total)}`);
+        document.getElementById("mov-notas").value = "";
+        document.querySelectorAll(".emp-check").forEach(c => { c.checked = false; });
+        actualizarMontoDividido();
+        await cargarTodo();
+        showTab("dashboard");
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "Error al guardar el feriado", "error");
+      } finally {
+        isSaving = false;
+        setButtonLoading(btn, false, "Registrar movimiento");
+      }
+    }
+
+    // =====================================================
+    // PRÉSTAMOS: AMPLIAR, LIQUIDAR, BORRAR
+    // =====================================================
+    // Ampliar: fila "Prestamo" con [pid:X]. Suma al saldo del préstamo X (resumenPrestamos) y,
+    //   como cualquier préstamo, se entrega con el sueldo de la semana en que se registra.
+    // Liquidar (cuando ya tiene cuotas): paga el saldo completo de una vez.
+    //   - Descontar del sueldo: fila "CuotaPrestamo" por el saldo, en la semana del Dashboard.
+    //   - Pago por fuera (efectivo/transferencia): fila "PagoPrestamo"; baja el saldo sin tocar el sueldo.
+    // Borrar (sin cuotas ni pagos): quita el préstamo y sus ampliaciones (registro equivocado).
+    //   Con cuotas no se borra: esas cuotas ya salieron de sueldos pagados.
+    let _prestAccion = null;
+
+    function _prestBuscar(pid) {
+      return resumenPrestamos().find(r => String(r.prestamoId) === String(pid)) || null;
+    }
+
+    function _prestAbrir({ titulo, sub, cuerpo, boton, peligro }) {
+      document.getElementById("prest-titulo").textContent = titulo;
+      document.getElementById("prest-sub").textContent = sub || "";
+      document.getElementById("prest-cuerpo").innerHTML = cuerpo;
+      const err = document.getElementById("prest-error");
+      err.classList.add("hidden");
+      err.textContent = "";
+      const ok = document.getElementById("btn-prest-ok");
+      ok.textContent = boton;
+      ok.className = (peligro ? "btn-danger" : "btn-yellow") + " flex-1 py-2.5 rounded-lg text-sm";
+      document.getElementById("prest-overlay").classList.remove("hidden");
+    }
+
+    function cerrarPrestamoAccion() {
+      _prestAccion = null;
+      document.getElementById("prest-overlay")?.classList.add("hidden");
+    }
+
+    function _prestError(texto) {
+      const err = document.getElementById("prest-error");
+      err.textContent = texto;
+      err.classList.remove("hidden");
+    }
+
+    function _prestResumenHtml(r) {
+      return `
+        <div class="prest-resumen">
+          <div><span>Saldo pendiente</span><strong class="text-[#e8b04a]">${formatMoney(r.saldo)}</strong></div>
+          <div><span>Prestado</span><strong>${formatMoney(r.prestado)}</strong></div>
+          <div><span>Pagado</span><strong class="text-[#5ecf8f]">${formatMoney(r.pagado)}</strong></div>
+          <div><span>Cuota semanal</span><strong>${formatMoney(r.cuota)}</strong></div>
+        </div>`;
+    }
+
+    function abrirAmpliarPrestamo(pid) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const r = _prestBuscar(pid);
+      if (!r || !r.enCurso) return showToast("El préstamo ya no está en curso", "error");
+      _prestAccion = { tipo: "ampliar", pid: String(pid) };
+      const cierre = formatDateDisplay(semanaDesdeFecha(localDateStr(new Date())));
+      _prestAbrir({
+        titulo: `Ampliar préstamo · ${r.empleado}`,
+        sub: `Se suma a este mismo préstamo. Se entrega con su sueldo de la semana que cierra ${cierre}.`,
+        cuerpo: `
+          ${_prestResumenHtml(r)}
+          <div>
+            <label class="block text-xs text-gray-500 mb-1" for="prest-monto">¿Cuánto más le das?</label>
+            <div class="amount-wrap">
+              <span class="currency">$</span>
+              <input type="number" id="prest-monto" step="0.01" min="0" inputmode="decimal" placeholder="0.00" class="w-full rounded-lg py-3" oninput="actualizarPrevistaAmpliar()" />
+            </div>
+            <p id="prest-prevista" class="text-[12.5px] text-[var(--text-muted)] mt-2 min-h-[18px]"></p>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 mb-1" for="prest-nota">Nota</label>
+            <input type="text" id="prest-nota" maxlength="80" placeholder="Opcional" class="w-full rounded-lg px-3 py-2.5 text-sm" />
+          </div>`,
+        boton: "Ampliar"
+      });
+      setTimeout(() => document.getElementById("prest-monto")?.focus(), 80);
+    }
+
+    function actualizarPrevistaAmpliar() {
+      if (!_prestAccion || _prestAccion.tipo !== "ampliar") return;
+      const r = _prestBuscar(_prestAccion.pid);
+      const el = document.getElementById("prest-prevista");
+      const monto = _redondear2(parseFloat(document.getElementById("prest-monto")?.value));
+      if (!r || !el) return;
+      el.innerHTML = monto > 0
+        ? `Nuevo saldo: <strong class="text-white">${formatMoney(r.saldo + monto)}</strong> · la cuota sigue en ${formatMoney(r.cuota)}`
+        : "";
+    }
+
+    function abrirLiquidarPrestamo(pid) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      const r = _prestBuscar(pid);
+      if (!r || !r.enCurso) return showToast("El préstamo ya está liquidado", "info");
+      _prestAccion = { tipo: "liquidar", pid: String(pid) };
+      const semanaStr = localDateStr(getSemanaSeleccionada());
+      const semana = formatDateDisplay(semanaStr);
+      let quedaria = "";
+      const emp = empleados.find(e => e.empleado === r.empleado);
+      if (emp) {
+        const neto = _redondear2(desgloseSueldo(emp, movimientosDeSemana(semanaStr)).total - r.saldo);
+        quedaria = neto < 0
+          ? ` · <span class="text-[#e08888]">su sueldo quedaría en ${formatMoney(neto)}</span>`
+          : ` · su sueldo quedaría en ${formatMoney(neto)}`;
+      }
+      _prestAbrir({
+        titulo: `Liquidar préstamo · ${r.empleado}`,
+        sub: "Se paga todo el saldo de una vez y el préstamo queda cerrado.",
+        cuerpo: `
+          ${_prestResumenHtml(r)}
+          <div class="prest-opciones" role="radiogroup" aria-label="Cómo se paga">
+            <label class="prest-opcion">
+              <input type="radio" name="prest-forma" value="sueldo" checked />
+              <span><strong>Descontar de su sueldo</strong><small>Semana que cierra ${semana}${quedaria}</small></span>
+            </label>
+            <label class="prest-opcion">
+              <input type="radio" name="prest-forma" value="fuera" />
+              <span><strong>Pagó por fuera</strong><small>Efectivo o transferencia · no toca su sueldo</small></span>
+            </label>
+          </div>`,
+        boton: `Liquidar ${formatMoney(r.saldo)}`
+      });
+    }
+
+    async function _prestGuardar(row) {
+      const { data, error } = await sb.from("movimientos").insert([row]).select("*");
+      if (error) throw error;
+      try { await logAuditoria("INSERT", (data && data[0]) || row); } catch (_) {}
+    }
+
+    async function confirmarPrestamoAccion() {
+      const acc = _prestAccion;
+      if (!acc || isSaving) return;
+      const r = _prestBuscar(acc.pid);
+      if (!r || !r.enCurso) { cerrarPrestamoAccion(); return showToast("El préstamo ya no está en curso", "error"); }
+      const hoy = localDateStr(new Date());
+      let row, pregunta, aviso;
+
+      if (acc.tipo === "ampliar") {
+        const monto = _redondear2(parseFloat(document.getElementById("prest-monto")?.value));
+        if (!(monto > 0)) return _prestError("Escribe cuánto más le das.");
+        const nota = (document.getElementById("prest-nota")?.value || "").trim();
+        const semana = semanaDesdeFecha(hoy);
+        row = {
+          fecha: hoy, empleado: r.empleado, tipo: "Prestamo", monto,
+          notas: notasConPrestamoId(nota ? `Ampliación · ${nota}` : "Ampliación", r.prestamoId),
+          semana, responsable: currentUser.usuario || ""
+        };
+        pregunta = `¿Ampliar el préstamo de ${r.empleado}?\n+${formatMoney(monto)} · nuevo saldo ${formatMoney(r.saldo + monto)}\n\nSe entrega con su sueldo de la semana que cierra ${formatDateDisplay(semana)}. La cuota sigue en ${formatMoney(r.cuota)}.`;
+        aviso = `Préstamo ampliado · nuevo saldo ${formatMoney(r.saldo + monto)}`;
+      } else {
+        const forma = document.querySelector('input[name="prest-forma"]:checked')?.value || "sueldo";
+        const saldo = _redondear2(r.saldo);
+        if (forma === "sueldo") {
+          const semana = localDateStr(getSemanaSeleccionada());
+          row = {
+            fecha: hoy, empleado: r.empleado, tipo: "CuotaPrestamo", monto: saldo,
+            notas: notasConPrestamoId(`Liquidación préstamo semana ${semana}`, r.prestamoId),
+            semana, responsable: currentUser.usuario || ""
+          };
+          pregunta = `¿Liquidar el préstamo de ${r.empleado}?\n${formatMoney(saldo)} se descuentan de su sueldo de la semana que cierra ${formatDateDisplay(semana)}.`;
+        } else {
+          row = {
+            fecha: hoy, empleado: r.empleado, tipo: "PagoPrestamo", monto: saldo,
+            notas: notasConPrestamoId("Liquidación · pago por fuera", r.prestamoId),
+            semana: semanaDesdeFecha(hoy), responsable: currentUser.usuario || ""
+          };
+          pregunta = `¿Liquidar el préstamo de ${r.empleado}?\nPagó ${formatMoney(saldo)} por fuera (efectivo o transferencia). Su sueldo no cambia.`;
+        }
+        aviso = `Préstamo de ${r.empleado} liquidado`;
+      }
+
+      const ok = await uiConfirm(pregunta);
+      if (!ok) return;
+      isSaving = true;
+      const btn = document.getElementById("btn-prest-ok");
+      const texto = btn.textContent;
+      setButtonLoading(btn, true, texto);
+      try {
+        await _prestGuardar(row);
+        cerrarPrestamoAccion();
+        showToast(aviso);
+        await cargarTodo();
+        showTab("prestamos");
+      } catch (err) {
+        console.error(err);
+        _prestError(err.message || "No se pudo guardar");
+      } finally {
+        isSaving = false;
+        setButtonLoading(btn, false, texto);
+      }
+    }
+
+    async function borrarPrestamo(pid) {
+      if (!currentUser || currentUser.rol !== "admin") return showToast("Solo admin", "error");
+      if (isSaving) return;
+      const r = _prestBuscar(pid);
+      if (!r) return showToast("No se encontró el préstamo", "error");
+      if ((r.cuotas || []).length) return showToast("Ya tiene cuotas cobradas: usa Liquidar", "error");
+      const ampl = r.ampliaciones || [];
+      const ok = await uiConfirm(
+        `¿Borrar el préstamo de ${r.empleado}?\n${formatMoney(r.prestado)} del ${formatDateDisplay(r.fecha)}` +
+        (ampl.length ? ` (incluye ${ampl.length} ampliación/es)` : "") +
+        `\n\nTambién se quita del sueldo de la semana en que se entregó. No se puede deshacer.`
+      );
+      if (!ok) return;
+      isSaving = true;
+      try {
+        const filas = [r.prestamo].concat(ampl);
+        for (const m of filas) {
+          try {
+            await logAuditoria("DELETE", {
+              id: m.id, fecha: m.fecha, tipo: m.tipo, monto: m.monto, empleado: m.empleado,
+              notas: m.notas, responsable: m.responsable, semana: m.semana
+            });
+          } catch (_) {}
+        }
+        const ids = filas.map(m => Number(m.id) || m.id);
+        const { error } = await sb.from("movimientos").delete().in("id", ids);
+        if (error) throw error;
+        const quitar = new Set(filas.map(m => String(m.id)));
+        movimientos = movimientos.filter(m => !quitar.has(String(m.id)));
+        guardarCache();
+        aplicarDatosEnPantalla();
+        showToast("Préstamo borrado");
+      } catch (err) {
+        console.error(err);
+        showToast(err.message || "No se pudo borrar el préstamo", "error");
+        await cargarTodoOptimizado();
+      } finally {
+        isSaving = false;
+      }
+    }
+  </script>
+  <script>
     // =====================================================
     // INIT
     // =====================================================
@@ -7778,7 +9241,7 @@
     (function () {
       const DEMO = !!window.__demoBackend; // true solo en demo.html (datos locales)
       const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const TAB_ORDER = ["dashboard", "nuevo", "historial", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
+      const TAB_ORDER = ["dashboard", "nuevo", "historial", "solicitudes", "individual", "ahorros", "ahorroespecial", "gastosnegocio", "ingresosnegocio", "prestamos", "empleados", "usuarios"];
       const $ = (id) => document.getElementById(id);
       const wait = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -7911,7 +9374,7 @@
         document.body.appendChild(g);
         setTimeout(() => g.remove(), 300);
       }
-      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay"];
+      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay", "solic-overlay", "motivo-overlay", "prest-overlay"];
       function watchOverlays() {
         OVERLAYS.forEach(id => {
           const el = $(id);
@@ -8137,10 +9600,13 @@
         const d = $("app-drawer");
         if (d && d.classList.contains("open")) return cerrarDrawer();
         const open = (id) => { const el = $(id); return el && !el.classList.contains("hidden"); };
+        if (open("motivo-overlay")) return cerrarMotivo();
+        if (open("prest-overlay")) return cerrarPrestamoAccion();
         if (open("edit-mov-overlay")) return cerrarEditarMovimiento();
         if (open("mov-detail-overlay")) return cerrarDetalleMovimiento();
         if (open("sueldo-modal-overlay")) return cerrarSueldoModal();
         if (open("confirm-overlay")) return cerrarConfirmacion();
+        if (open("solic-overlay")) return cerrarSolicitudesPendientes();
       });
 
       // ---------- Onda al tocar ----------

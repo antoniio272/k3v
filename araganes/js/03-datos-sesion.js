@@ -515,6 +515,8 @@
             <option value="Ahorro">Ahorro</option>
             <option value="AhorroEspecial">Ahorro especial</option>
             <option value="Fiado">Fiado 🍔</option>
+            <option value="Feriado">Día feriado</option>
+            <option value="PagoPrestamo">Pago de préstamo</option>
           `;
         }
       }

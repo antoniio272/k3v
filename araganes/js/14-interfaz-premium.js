@@ -139,7 +139,7 @@
         document.body.appendChild(g);
         setTimeout(() => g.remove(), 300);
       }
-      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay", "solic-overlay", "motivo-overlay"];
+      const OVERLAYS = ["confirm-overlay", "edit-mov-overlay", "sueldo-modal-overlay", "mov-detail-overlay", "lock-overlay", "solic-overlay", "motivo-overlay", "prest-overlay"];
       function watchOverlays() {
         OVERLAYS.forEach(id => {
           const el = $(id);
@@ -366,6 +366,7 @@
         if (d && d.classList.contains("open")) return cerrarDrawer();
         const open = (id) => { const el = $(id); return el && !el.classList.contains("hidden"); };
         if (open("motivo-overlay")) return cerrarMotivo();
+        if (open("prest-overlay")) return cerrarPrestamoAccion();
         if (open("edit-mov-overlay")) return cerrarEditarMovimiento();
         if (open("mov-detail-overlay")) return cerrarDetalleMovimiento();
         if (open("sueldo-modal-overlay")) return cerrarSueldoModal();

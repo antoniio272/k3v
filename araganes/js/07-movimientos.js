@@ -114,6 +114,7 @@
           metodoBox.classList.add("hidden");
         }
       }
+      if (typeof aplicarVistaFeriado === "function") aplicarVistaFeriado(tipo);
       actualizarMontoDividido();
     }
 
@@ -269,6 +270,11 @@
       const monto = parseFloat(document.getElementById("mov-monto").value) || 0;
       const label = document.getElementById("monto-dividido");
       if (!label) return;
+      if (tipoSeleccionado === "Feriado") {
+        label.textContent = "";
+        if (typeof renderFeriadoPreview === "function") renderFeriadoPreview();
+        return;
+      }
 
       const labelMonto = document.getElementById("label-monto");
       if (tipoSeleccionado === "Gasto" || tipoSeleccionado === "Ingreso") {
@@ -311,6 +317,7 @@
 
     function guardarMovimiento() {
       if (isSaving) return;
+      if (tipoSeleccionado === "Feriado") return guardarFeriado();
       const fecha = document.getElementById("mov-fecha").value;
       const monto = parseFloat(document.getElementById("mov-monto").value);
       const notas = document.getElementById("mov-notas").value.trim();

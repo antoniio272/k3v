@@ -173,7 +173,9 @@
         AhorroEspecial: "⭐",
         RetiroAhorro: "🐷💸",
         RetiroAhorroEspecial: "⭐💸",
-        Fiado: "🍔"
+        Fiado: "🍔",
+        Feriado: "📅",
+        PagoPrestamo: "💳✓"
       };
       return icons[tipo] || "•";
     }
@@ -344,13 +346,17 @@
      */
     function resumenPrestamos() {
       const prestamosMov = [];
+      const ampliacionesMov = [];
       const cuotasMov = [];
+      const pagosFueraMov = [];
       (movimientos || []).forEach(m => {
         const t = String(m.tipo || "").trim();
         const emp = String(m.empleado || "").trim();
         if (!emp || emp === "Negocio" || emp === "Grupo") return;
-        if (t === "Prestamo") prestamosMov.push(m);
+        // Un "Prestamo" con [pid:X] es una ampliación del préstamo X (no un préstamo nuevo)
+        if (t === "Prestamo") (parsePrestamoIdFromNotas(m.notas) ? ampliacionesMov : prestamosMov).push(m);
         else if (t === "CuotaPrestamo") cuotasMov.push(m);
+        else if (t === "PagoPrestamo") pagosFueraMov.push(m);
       });
 
       prestamosMov.sort((a, b) => {
@@ -370,6 +376,8 @@
           pagado: 0,
           cuota: c > 0 ? c : 500,
           cuotas: [],
+          ampliaciones: [],
+          prestadoInicial: Number(p.monto) || 0,
           prestamo: p,
           fecha: String(p.fecha || "").slice(0, 10),
           notas: p.notas || "",
@@ -378,6 +386,23 @@
       });
       const byId = {};
       loans.forEach(l => { byId[l.prestamoId] = l; });
+
+      ampliacionesMov.forEach(a => {
+        const l = byId[parsePrestamoIdFromNotas(a.notas)];
+        if (!l) return; // préstamo original ya no existe: la ampliación no forma deuda aparte
+        l.prestado += Number(a.monto) || 0;
+        l.ampliaciones.push(a);
+      });
+
+      // Pagos por fuera del sueldo (efectivo/transferencia): bajan el saldo, no tocan la nómina
+      pagosFueraMov.forEach(c => {
+        const l = byId[parsePrestamoIdFromNotas(c.notas)];
+        if (!l) return;
+        l.pagado += Number(c.monto) || 0;
+        l.cuotas.push(Object.assign({}, c, { _pagoFuera: true }));
+        const f = String(c.fecha || "").slice(0, 10);
+        if (f && f > l.ultimaFecha) l.ultimaFecha = f;
+      });
 
       const unlinked = [];
       cuotasMov.forEach(c => {

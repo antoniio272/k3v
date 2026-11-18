@@ -311,7 +311,8 @@
         else if (esGasto(m.tipo) || m.tipo === "Penalizacion") colorTipo = "text-[#e08888]";
         else if (m.tipo === "Ingreso") colorTipo = "text-[#5ecf8f]";
         else if (m.tipo === "Prestamo") colorTipo = "text-[#5ecf8f]";
-        else if (m.tipo === "CuotaPrestamo" || m.tipo === "CuotaOmitida") colorTipo = "text-[#e8b04a]";
+        else if (m.tipo === "CuotaPrestamo" || m.tipo === "CuotaOmitida" || m.tipo === "PagoPrestamo") colorTipo = "text-[#e8b04a]";
+        else if (m.tipo === "Feriado") colorTipo = "text-[#e0b83a]";
         else if (m.tipo === "RetiroAhorro" || m.tipo === "RetiroAhorroEspecial") colorTipo = "text-[#e08888]";
         else if (m.tipo === "Ahorro") colorTipo = "text-[#6eb8d8]";
         else if (m.tipo === "AhorroEspecial") colorTipo = "text-[#b8a0d0]";
@@ -319,7 +320,7 @@
 
         const barColor =
           m.tipo === "Bono" ? "#34a86a" :
-          m.tipo === "Extra" ? "#c9a227" :
+          m.tipo === "Extra" || m.tipo === "Feriado" ? "#c9a227" :
           m.tipo === "Adelanto" ? "#d4920a" :
           (esGasto(m.tipo) || m.tipo === "Penalizacion") ? "#c45454" :
           m.tipo === "Ahorro" ? "#4a9bbf" :
@@ -778,7 +779,7 @@
         notas = (notas + " [cuota:" + cuotaOld + "]").trim();
       }
       const pidOld = parsePrestamoIdFromNotas(mov.notas);
-      if ((tipo === "CuotaPrestamo") && pidOld && !/\[pid:/i.test(notas)) {
+      if ((tipo === "CuotaPrestamo" || tipo === "PagoPrestamo" || tipo === "Prestamo") && pidOld && !/\[pid:/i.test(notas)) {
         notas = notasConPrestamoId(notas, pidOld);
       }
 

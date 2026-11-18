@@ -99,7 +99,7 @@
       cont.innerHTML = ordenados.map(r => {
         const pid = String(r.prestamoId || "");
         const cuotasHtml = (r.cuotas || []).slice().sort((a,b) => (b.fecha||"").localeCompare(a.fecha||"")).slice(0, 8).map(c =>
-          `<div class="flex justify-between text-xs text-gray-400 py-1 border-b border-gray-800"><span>${formatDateDisplay(c.fecha)}${c._fifoLegacy ? ' <span class="text-[10px] text-gray-600">(hist.)</span>' : ""}</span><span class="text-[#e8b04a]">-${formatMoney(c.monto)}</span></div>`
+          `<div class="flex justify-between text-xs text-gray-400 py-1 border-b border-gray-800"><span>${formatDateDisplay(c.fecha)}${c._fifoLegacy ? ' <span class="text-[10px] text-gray-600">(hist.)</span>' : ""}${c._pagoFuera ? ' <span class="text-[10px] text-gray-500">· pago por fuera</span>' : ""}</span><span class="text-[#e8b04a]">-${formatMoney(c.monto)}</span></div>`
         ).join("") || `<p class="text-xs text-gray-500">Sin cuotas</p>`;
         const notaCorta = notasVisibles(r.notas || "").slice(0, 40);
 
@@ -144,6 +144,7 @@
                     · del ${formatDateDisplay(r.fecha)}
                     ${notaCorta ? " · " + esc(notaCorta) : ""}
                   </p>
+                  ${(r.ampliaciones || []).length ? `<p class="text-[11px] text-[#5ecf8f] mt-0.5">Ampliado ${r.ampliaciones.length} vez/veces · +${formatMoney(r.prestado - r.prestadoInicial)}</p>` : ""}
                 </div>
               </div>
               <div class="text-right">
@@ -166,6 +167,12 @@
                 : `<span class="text-xs text-gray-500">Pendiente esta semana: ${formatMoney(montoCuota)}</span>`
               }
               <button type="button" class="btn-outline px-3 py-2 rounded-lg text-xs" onclick='aplicarCuotaPrestamo(${jsArg(r.empleado)}, ${Number(r.cuota) || 500}, ${Number(r.saldo) || 0}, ${jsArg(pid)})'>Aplicar solo a este</button>
+            </div>
+            <div class="prest-acciones">
+              <button type="button" class="btn-ghost px-3 py-2 rounded-lg text-xs" onclick='abrirAmpliarPrestamo(${jsArg(pid)})'>Ampliar</button>
+              ${(r.cuotas || []).length
+                ? `<button type="button" class="btn-ghost px-3 py-2 rounded-lg text-xs" onclick='abrirLiquidarPrestamo(${jsArg(pid)})'>Liquidar</button>`
+                : `<button type="button" class="btn-ghost px-3 py-2 rounded-lg text-xs text-[#e08888]" onclick='borrarPrestamo(${jsArg(pid)})'>Borrar</button>`}
             </div>
           </div>
         `;

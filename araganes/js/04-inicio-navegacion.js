@@ -36,12 +36,13 @@
           if (TIPOS_NO_PURGABLES.has(m.tipo)) return false;
           const f = soloDia(m.fecha);
           if (!f || f >= cutoffStr) return false;
-          if (m.tipo === "CuotaPrestamo") {
+          if (m.tipo === "CuotaPrestamo" || m.tipo === "PagoPrestamo") {
             const pid = parsePrestamoIdFromNotas(m.notas);
             if (pid && prestamosActivos.has(pid)) return false;
           }
           if (m.tipo === "Prestamo") {
-            const pid = String(m.id != null ? m.id : m.row);
+            // Ampliación: ligada por [pid]; préstamo original: su propio id
+            const pid = parsePrestamoIdFromNotas(m.notas) || String(m.id != null ? m.id : m.row);
             if (prestamosActivos.has(pid)) return false;
           }
           return true;

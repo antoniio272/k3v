@@ -39,6 +39,7 @@
       const adel = sum("Adelanto");
       const bono = sum("Bono");
       const extra = sum("Extra");
+      const feriado = sum("Feriado");
       const ahorro = sum("Ahorro");
       const ahorroEsp = sum("AhorroEspecial");
       const retiroAhorro = sum("RetiroAhorro");
@@ -46,7 +47,7 @@
       const fiado = sum("Fiado");
       const empObj = empleados.find(e => e.empleado === emp);
       const base = empObj ? empObj.sueldoBase : 0;
-      const total = base + bono + extra + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
+      const total = base + bono + extra + feriado + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
 
       if (empty) empty.classList.add("hidden");
 
@@ -81,7 +82,7 @@
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-sm">
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Sueldo base</div><div class="font-bold text-gray-200">${formatMoney(base)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Bonos</div><div class="font-bold text-[#5ecf8f]">${formatMoney(bono)}</div></div>
-            <div class="summary-pill"><div class="text-[11px] text-gray-500">Extras</div><div class="font-bold text-[#e0b83a]">${formatMoney(extra)}</div></div>
+            <div class="summary-pill"><div class="text-[11px] text-gray-500">${feriado ? "Extras y feriado" : "Extras"}</div><div class="font-bold text-[#e0b83a]">${formatMoney(extra + feriado)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Nuevo préstamo</div><div class="font-bold text-[#5ecf8f]">${formatMoney(prestamosNuevos)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Adelantos</div><div class="font-bold text-[#e8b04a]">${formatMoney(adel)}</div></div>
             <div class="summary-pill"><div class="text-[11px] text-gray-500">Penalizaciones</div><div class="font-bold text-[#e08888]">${formatMoney(gastos)}</div></div>
@@ -102,6 +103,7 @@
       lineas.push(`Sueldo base: ${formatMoney(base)}`);
       if (bono) lineas.push(`+ Bonos: ${formatMoney(bono)}`);
       if (extra) lineas.push(`+ Extras: ${formatMoney(extra)}`);
+      if (feriado) lineas.push(`+ Día feriado: ${formatMoney(feriado)}`);
       if (adel) lineas.push(`− Adelantos: ${formatMoney(adel)}`);
       if (gastos) lineas.push(`− Penalizaciones: ${formatMoney(gastos)}`);
       if (cuotasPrest) lineas.push(`− Abono Préstamo: ${formatMoney(cuotasPrest)}`);
@@ -122,6 +124,7 @@
           const nota = notasVisibles(m.notas) || "";
           const monto = formatMoney(montoParaEmpleado(m, emp));
           const tLow = String(m.tipo || "").trim().toLowerCase();
+          if (tLow === "pagoprestamo") return;
           if (tLow === "prestamo") {
             if (nota) notasPrestamo.push(nota);
             return; // no duplicar: va al final resaltado
@@ -193,6 +196,7 @@
       const adel = sum("Adelanto");
       const bono = sum("Bono");
       const extra = sum("Extra");
+      const feriado = sum("Feriado");
       const ahorro = sum("Ahorro");
       const ahorroEsp = sum("AhorroEspecial");
       const retiroAhorro = sum("RetiroAhorro");
@@ -200,7 +204,7 @@
       const fiado = sum("Fiado");
       const empObj = empleados.find(e => e.empleado === emp);
       const base = empObj ? empObj.sueldoBase : 0;
-      const total = base + bono + extra + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
+      const total = base + bono + extra + feriado + prestamosNuevos + retiroAhorro + retiroAhorroEsp - adel - gastos - cuotasPrest - ahorro - ahorroEsp - fiado;
       // deuda prestamo total (suma de todos los préstamos en curso del empleado)
       let saldoPrest = 0;
       try {
@@ -219,6 +223,7 @@
       lineas.push(padLine("Sueldo base", moneyPlain(base), W));
       if (bono) lineas.push(padLine("Bonos", "+" + moneyPlain(bono), W));
       if (extra) lineas.push(padLine("Extras", "+" + moneyPlain(extra), W));
+      if (feriado) lineas.push(padLine("Dia feriado", "+" + moneyPlain(feriado), W));
       if (prestamosNuevos) lineas.push(padLine("Nuevo prestamo", "+" + moneyPlain(prestamosNuevos), W));
       if (adel) lineas.push(padLine("Adelantos", "-" + moneyPlain(adel), W));
       if (gastos) lineas.push(padLine("Penalizaciones", "-" + moneyPlain(gastos), W));
