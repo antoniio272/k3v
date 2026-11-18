@@ -1,21 +1,19 @@
     // =====================================================
     // DÍA FERIADO
     // =====================================================
-    // Paga el extra de un feriado trabajado. Sueldo diario = sueldo semanal ÷ 7.
-    // El multiplicador es el pago TOTAL del día. Como ese día ya va dentro del sueldo base,
-    // solo se registra la diferencia: extra = diario × (multiplicador − 1).
-    //   Ej. $700/semana → $100/día. x2 → +$100 (semana de $800). x3 → +$200 (semana de $900).
-    // Se guarda una fila "Feriado" por empleado con el monto ya calculado, para que un cambio
-    // posterior del sueldo base no mueva feriados pasados.
-    const FERIADO_MULT_MIN = 1.5;
-    const FERIADO_MULT_MAX = 5;
-    let multiplicadorFeriado = 2;
+    // Paga un día feriado trabajado. Sueldo diario = sueldo semanal ÷ 7.
+    // El multiplicador es cuántos días se SUMAN al sueldo: extra = diario × multiplicador.
+    //   Ej. $700/semana → $100/día. x1 → +$100 (semana de $800). x2 → +$200 (semana de $900).
+    // Se guarda una fila "Feriado" por empleado con el monto ya calculado (sin el multiplicador
+    // en la nota), para que un cambio posterior del sueldo base no mueva feriados pasados.
+    const FERIADO_MULTIPLICADORES = [1, 2];
+    let multiplicadorFeriado = 1;
 
     function _redondear2(n) { return Math.round((Number(n) || 0) * 100) / 100; }
     function extraFeriado(sueldoSemanal, mult) {
-      return _redondear2((Number(sueldoSemanal) || 0) / 7 * (Number(mult) - 1));
+      return _redondear2((Number(sueldoSemanal) || 0) / 7 * Number(mult));
     }
-    function _multiplicadorValido(m) { return m >= FERIADO_MULT_MIN && m <= FERIADO_MULT_MAX; }
+    function _multiplicadorValido(m) { return FERIADO_MULTIPLICADORES.includes(m); }
     function _multTexto(m) { return "x" + String(_redondear2(m)); }
 
     function aplicarVistaFeriado(tipo) {
@@ -25,21 +23,15 @@
       if (es) document.getElementById("modo-monto-box")?.classList.add("hidden");
       const notas = document.getElementById("mov-notas");
       if (notas) notas.placeholder = es ? "Opcional. Ej. 16 de septiembre" : "Motivo";
-      if (es) setMultiplicadorFeriado(multiplicadorFeriado, false);
+      if (es) setMultiplicadorFeriado(multiplicadorFeriado);
     }
 
-    function setMultiplicadorFeriado(valor, desdeCampo) {
-      const n = Number(String(valor ?? "").replace(",", "."));
-      const otro = document.getElementById("feriado-otro");
-      if (desdeCampo) {
-        multiplicadorFeriado = String(valor ?? "").trim() === "" ? 2 : n;
-      } else {
-        multiplicadorFeriado = n;
-        if (otro && n !== 2 && n !== 3) otro.value = String(n);
-        else if (otro) otro.value = "";
-      }
-      document.getElementById("feriado-x2")?.classList.toggle("modo-active", multiplicadorFeriado === 2 && !(otro && otro.value));
-      document.getElementById("feriado-x3")?.classList.toggle("modo-active", multiplicadorFeriado === 3 && !(otro && otro.value));
+    function setMultiplicadorFeriado(valor) {
+      const n = Number(valor);
+      multiplicadorFeriado = _multiplicadorValido(n) ? n : 1;
+      FERIADO_MULTIPLICADORES.forEach(m => {
+        document.getElementById("feriado-x" + m)?.classList.toggle("modo-active", m === multiplicadorFeriado);
+      });
       renderFeriadoPreview();
     }
 
@@ -55,10 +47,6 @@
       const cont = document.getElementById("feriado-preview");
       if (!cont || tipoSeleccionado !== "Feriado") return;
       const mult = multiplicadorFeriado;
-      if (!_multiplicadorValido(mult)) {
-        cont.innerHTML = `<p class="feriado-aviso">Escribe un multiplicador entre ${FERIADO_MULT_MIN} y ${FERIADO_MULT_MAX}.</p>`;
-        return;
-      }
       const filas = _filasFeriado(mult);
       if (!filas.length) {
         cont.innerHTML = `<p class="feriado-vacio">Elige a quién se le paga el feriado.</p>`;
@@ -74,7 +62,7 @@
             : `<span class="text-[#e08888] col-span-2 text-right">Sin sueldo base</span>`}
         </div>`).join("") + `
         <div class="feriado-fila feriado-total">
-          <span>Total extra · pago ${_multTexto(mult)}</span><span></span>
+          <span>Total a sumar · ${_multTexto(mult)}</span><span></span>
           <span class="text-[#e0b83a] font-semibold tabular-nums">+${formatMoney(total)}</span>
         </div>`;
     }
@@ -85,7 +73,7 @@
       const fecha = document.getElementById("mov-fecha").value;
       if (!fecha) return showToast("Elige la fecha del feriado", "error");
       const mult = multiplicadorFeriado;
-      if (!_multiplicadorValido(mult)) return showToast(`Elige x2, x3 u otro multiplicador entre ${FERIADO_MULT_MIN} y ${FERIADO_MULT_MAX}`, "error");
+      if (!_multiplicadorValido(mult)) return showToast("Elige x1 o x2", "error");
       const filas = _filasFeriado(mult);
       if (!filas.length) return showToast("Selecciona al menos un empleado", "error");
       const sinSueldo = filas.filter(f => f.monto <= 0);
@@ -93,12 +81,12 @@
 
       const nota = (document.getElementById("mov-notas").value || "").trim();
       const multTxt = _multTexto(mult);
-      const notas = `${nota || "Día feriado"} · pago ${multTxt}`;
+      const notas = nota || "Día feriado";
       const total = _redondear2(filas.reduce((s, f) => s + f.monto, 0));
       const detalle = (filas.length <= 6 ? filas : filas.slice(0, 5))
         .map(f => `${f.nombre}: +${formatMoney(f.monto)}`).join("\n") +
         (filas.length > 6 ? `\ny ${filas.length - 5} más` : "");
-      const ok = await uiConfirm(`¿Registrar día feriado ${multTxt}?\n${formatDateDisplay(fecha)} · pago total del día ${multTxt}\n\n${detalle}\n\nTotal extra: ${formatMoney(total)}`);
+      const ok = await uiConfirm(`¿Registrar día feriado ${multTxt}?\n${formatDateDisplay(fecha)} · se suma${mult === 1 ? " 1 día" : ` ${mult} días`} de sueldo\n\n${detalle}\n\nTotal: +${formatMoney(total)}`);
       if (!ok) return;
 
       isSaving = true;

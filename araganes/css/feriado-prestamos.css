@@ -19,7 +19,6 @@
     .feriado-total { background: rgba(201, 162, 39, 0.08); border-color: var(--gold-border); color: var(--text-secondary); }
     .feriado-vacio, .feriado-aviso { font-size: 12.5px; color: var(--text-muted); }
     .feriado-aviso { color: #e08888; }
-    #feriado-otro { font-size: 14px; }
 
     /* ---- Botones extra en la tarjeta de préstamo ---- */
     .prest-acciones {
@@ -70,5 +69,4 @@
 
     @media (hover: none) and (pointer: coarse) {
       #prest-overlay { background: rgba(3, 3, 4, 0.86); backdrop-filter: none; -webkit-backdrop-filter: none; }
-      #feriado-otro { font-size: 16px !important; }
     }
