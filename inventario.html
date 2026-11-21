@@ -106,6 +106,10 @@ nav.drawer button.active .ic{color:#fff}
 .stats-bar::-webkit-scrollbar{display:none}
 .stat-pill{flex-shrink:0;padding:7px 12px;border-radius:10px;font-size:.75rem;font-weight:600;font-variant-numeric:tabular-nums}
 .filter-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.filter-row.scroll{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.filter-row.scroll::-webkit-scrollbar{display:none}
+.filter-row.scroll>*{flex:none}
+.filter-lbl{font-size:.7rem;color:var(--text3);font-weight:600;align-self:center;margin-right:2px}
 .filter-chip{padding:6px 12px;border-radius:16px;font-size:.75rem;font-weight:600;background:var(--surface);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:background-color .2s,color .2s,border-color .2s,transform .15s var(--ease)}
 .filter-chip:active{transform:scale(.94)}
 .filter-chip.active{background:var(--primary);color:#fff;border-color:var(--primary)}
@@ -278,8 +282,9 @@ input.qty-val::-webkit-outer-spin-button,input.qty-val::-webkit-inner-spin-butto
         <div class="filter-chip" data-st="En Stock">En Stock</div>
         <div class="filter-chip" data-st="Al Máximo">Máximo</div>
       </div>
+      <div class="filter-row scroll" id="tienda-filters" style="margin-top:-4px"></div>
       <div class="filter-row" id="order-filters" style="margin-top:-4px">
-        <span style="font-size:.7rem;color:var(--text3);font-weight:600;align-self:center;margin-right:2px">ORDEN:</span>
+        <span class="filter-lbl">ORDEN:</span>
         <div class="filter-chip active" data-ord="estado">Por estado</div>
         <div class="filter-chip" data-ord="alfabetico">A–Z</div>
         <div class="filter-chip" data-ord="acomodo">Por acomodo</div>
@@ -398,7 +403,7 @@ const UNIDADES_BASE=['Pieza','Caja','Paquete','Bolsa','Bote','Bidon','Kg','Litro
 const CATEGORIAS_BASE=['Sin Categoria','Cocina','Bebidas'];
 const TIPOS_COMPRA=['Persona','Pedido'];
 
-let profile=null, allProductos=[], currentZona='Todos', searchQuery='', statusFilter='all', orderMode='estado';
+let profile=null, allProductos=[], currentZona='Todos', searchQuery='', statusFilter='all', tiendaFilter='all', orderMode='estado';
 // Compras registradas que aún no llegan completas (estado pendiente/parcial). No son stock.
 let pedidosAbiertos=[], comprasHoy=[];
 
@@ -675,13 +680,31 @@ function renderZonaTabs(){
     b.onclick=()=>{currentZona=z;tabs.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');animarLista=true;renderZonaLista()};
     tabs.appendChild(b);
   });
+  renderTiendaFiltros();
   renderZonaLista();
+}
+// Filtro por tienda en Inventario: "Todas", cada tienda existente y "Sin tienda" si hay productos sin ella.
+function renderTiendaFiltros(){
+  const tf=document.getElementById('tienda-filters');
+  const tiendas=getAllTiendas();
+  const sinTienda=allProductos.some(p=>!parseTiendas(p.tiendas).length);
+  if(tiendaFilter==='__sin__'?!sinTienda:tiendaFilter!=='all'&&!tiendas.some(t=>t.toLowerCase()===tiendaFilter.toLowerCase()))tiendaFilter='all';
+  const chip=(v,t)=>`<div class="filter-chip${v===tiendaFilter?' active':''}" data-t="${esc(v)}">${esc(t)}</div>`;
+  tf.innerHTML='<span class="filter-lbl">TIENDA:</span>'+chip('all','Todas')+tiendas.map(t=>chip(t,t)).join('')+(sinTienda?chip('__sin__','Sin tienda'):'');
+  tf.onclick=e=>{
+    const c=e.target.closest('.filter-chip');if(!c)return;
+    tiendaFilter=c.dataset.t;
+    tf.querySelectorAll('.filter-chip').forEach(x=>x.classList.toggle('active',x===c));
+    animarLista=true;renderZonaLista();
+  };
 }
 const colador=(a,b)=>String(a||'').localeCompare(String(b||''),'es',{numeric:true,sensitivity:'base'});
 function renderZonaLista(){
   const cont=document.getElementById('zona-container');cont.innerHTML='';
   let list=currentZona==='Todos'?allProductos.slice():allProductos.filter(p=>p.zona===currentZona);
   if(statusFilter!=='all')list=list.filter(p=>p.estado===statusFilter);
+  if(tiendaFilter==='__sin__')list=list.filter(p=>!parseTiendas(p.tiendas).length);
+  else if(tiendaFilter!=='all')list=list.filter(p=>parseTiendas(p.tiendas).some(t=>t.toLowerCase()===tiendaFilter.toLowerCase()));
   let fuzzy=false;
   if(searchQuery){const r=fuzzyFilter(list,searchQuery);list=r.items;fuzzy=r.fuzzy}
   document.getElementById('fuzzy-hint').classList.toggle('show',fuzzy);
